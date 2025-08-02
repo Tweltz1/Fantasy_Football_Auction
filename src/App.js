@@ -1914,15 +1914,15 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         const tiedBidders = sortedBids.filter(bid => bid.amount === highestBidAmount);
 
         if (tiedBidders.length > 1) {
-			const rebidDuration = currentLeague.rosterSettings?.rebidDuration || 15; // ADD THIS
-			await updateLeagueInFirestore({
-				status: 'rebidding',
-				currentPlayerIndex: currentLeague.currentPlayerIndex,
-				rebidInfo: {
-					originalTiedAmount: highestBidAmount,
-					tiedTeamIds: tiedBidders.map(b => b.bidderId),
-					rebidEndTime: new Date(Date.now() + rebidDuration * 1000) // CHANGE THIS
-				},
+	    const rebidDuration = currentLeague.rosterSettings?.rebidDuration || 15; // Add this line
+	    await updateLeagueInFirestore({
+	        status: 'rebidding',
+	        currentPlayerIndex: currentLeague.currentPlayerIndex,
+	        rebidInfo: {
+	            originalTiedAmount: highestBidAmount,
+	            tiedTeamIds: tiedBidders.map(b => b.bidderId),
+	            rebidEndTime: new Date(Date.now() + rebidDuration * 1000) // Use the new variable
+	        },
                 currentBid: 0,
                 currentBidderId: null,
                 bidEndTime: null,
