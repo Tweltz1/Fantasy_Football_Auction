@@ -1784,7 +1784,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             rebidInfo: null,
         });
         setBidAmount(0);
-    };
+    }, [currentLeague.players, currentLeague.teams, updateLeagueInFirestore]);
 
     const handleConfirmAssignment = async (playerId, assignedSpot) => {
         const team = currentLeague.teams.find(t => t.id === userId);
@@ -2450,7 +2450,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				}
 			}
 		}
-	}, [currentLeague.beerRequests, currentLeague.beerDutyTeamId, userId, currentLeague.id]);
+	}, [currentLeague.beerRequests, currentLeague.beerDutyTeamId, userId, currentLeague.id, currentLeague.teams]);
 	
 
     const handleKickMember = async (memberIdToKick) => {
