@@ -2002,7 +2002,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				}
 			});
 			return () => unsubscribe();
-		}, [db, isAuthReady, currentLeague.id, onBackToLeagueDetails, appId, userId]);
+		}, [db, isAuthReady, currentLeague.id, onBackToLeagueDetails, appId, userId, handleAutoAssignPlayer]);
 		
     useEffect(() => {
         if (currentLeague.status === 'drafting' && !currentLeague.isPaused && currentLeague.bidEndTime) {
