@@ -1914,26 +1914,26 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         const tiedBidders = sortedBids.filter(bid => bid.amount === highestBidAmount);
 
         if (tiedBidders.length > 1) {
-	    const rebidDuration = currentLeague.rosterSettings?.rebidDuration || 15; // Add this line
-	    await updateLeagueInFirestore({
-	        status: 'rebidding',
-	        currentPlayerIndex: currentLeague.currentPlayerIndex,
-	        rebidInfo: {
-	            originalTiedAmount: highestBidAmount,
-	            tiedTeamIds: tiedBidders.map(b => b.bidderId),
-	            rebidEndTime: new Date(Date.now() + rebidDuration * 1000) // Use the new variable
-	        },
-                currentBid: 0,
-                currentBidderId: null,
-                bidEndTime: null,
-                intermissionEndTime: null,
-                isPaused: false,
-                pausedAtRemainingTime: null,
-                activePlayerBids: {},
-                tiedBids: null,
-            });
-            setMessageModalContent(`A tie has occurred for ${player.name} at $${highestBidAmount}! Tied teams, please rebid.`);
-            setBidAmount(0);
+			const rebidDuration = currentLeague.rosterSettings?.rebidDuration || 15; // Add this line
+			await updateLeagueInFirestore({
+				status: 'rebidding',
+				currentPlayerIndex: currentLeague.currentPlayerIndex,
+				rebidInfo: {
+					originalTiedAmount: highestBidAmount,
+					tiedTeamIds: tiedBidders.map(b => b.bidderId),
+					rebidEndTime: new Date(Date.now() + rebidDuration * 1000) // Use the new variable
+				},
+					currentBid: 0,
+					currentBidderId: null,
+					bidEndTime: null,
+					intermissionEndTime: null,
+					isPaused: false,
+					pausedAtRemainingTime: null,
+					activePlayerBids: {},
+					tiedBids: null,
+				});
+				setMessageModalContent(`A tie has occurred for ${player.name} at $${highestBidAmount}! Tied teams, please rebid.`);
+				setBidAmount(0);
         } else {
             const winningBid = sortedBids[0].amount;
             const winningTeamId = sortedBids[0].bidderId;
