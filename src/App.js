@@ -1819,22 +1819,24 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         setBidAmount(0);
     }, [currentLeague.players, currentLeague.teams, updateLeagueInFirestore, currentLeague.rosterSettings]);
 
-    const handleConfirmAssignment = async (playerId, assignedSpot) => {
-        const team = currentLeague.teams.find(t => t.id === userId);
-        if (!team) return;
+    const handleConfirmAssignment = useCallback(async (playerId, assignedSpot) => {
+		const team = currentLeague.teams.find(t => t.id === userId);
+		if (!team) return;
 
-        const updatedRoster = team.roster.map(p => 
-            p.playerId === playerId ? { ...p, assignedSpot } : p
-        );
+		const updatedRoster = team.roster.map(p =>
+			p.playerId === playerId ? { ...p, assignedSpot } : p
+		);
 
-        const updatedTeams = currentLeague.teams.map(t => 
-            t.id === userId ? { ...t, roster: updatedRoster } : t
-        );
-        
-        await updateLeagueInFirestore({ teams: updatedTeams });
+		const updatedTeams = currentLeague.teams.map(t =>
+			t.id === userId ? { ...t, roster: updatedRoster } : t
+		);
+		
+		// This will now correctly update the database
+		await updateLeagueInFirestore({ teams: updatedTeams });
 
-        setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
-    };
+		// This will now correctly close the modal after the update
+		setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
+	}, [currentLeague.teams, userId, updateLeagueInFirestore]); // Add useCallback and this dependency array
 
     const handleRebidEnd = useCallback(async () => {
         if (currentLeague.status !== 'rebidding' || currentLeague.isPaused) return;
