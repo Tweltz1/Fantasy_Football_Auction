@@ -2429,7 +2429,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 		const newRequest = { requesterId: userId, timestamp: new Date() };
 		const updatedRequests = [...(currentLeague.beerRequests || []), newRequest];
 		await updateLeagueInFirestore({ beerRequests: updatedRequests });
-        setLastBeerRequest(now); // This was missing in your paste, ensures state updates
+        //setLastBeerRequest(now); // This was missing in your paste, ensures state updates
 		localStorage.setItem(`lastBeerRequest_${currentLeague.id}_${userId}`, now.toString());
 		setMessageModalContent('Your beer request has been sent!');
 	};
