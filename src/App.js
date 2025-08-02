@@ -1629,7 +1629,6 @@ const getRandomAvailablePlayerIndex = (players) => {
     return availablePlayerIndices[randomIndex];
 };
 
-// Add this new component to your App.js file
 const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) => {
     const getAvailableSpots = () => {
         if (!team || !player) return [];
@@ -1691,12 +1690,6 @@ const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) 
                         <p className="text-red-500">No available starting spots for this position.</p>
                     )}
                 </div>
-                 <button
-                    onClick={() => onAssign(player.id, 'BENCH')}
-                    className="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md"
-                >
-                    Assign to Bench
-                </button>
             </div>
         </Modal>
     );
@@ -1831,12 +1824,10 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 			t.id === userId ? { ...t, roster: updatedRoster } : t
 		);
 		
-		// This will now correctly update the database
 		await updateLeagueInFirestore({ teams: updatedTeams });
 
-		// This will now correctly close the modal after the update
 		setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
-	}, [currentLeague.teams, userId, updateLeagueInFirestore]); // Add useCallback and this dependency array
+	}, [currentLeague.teams, userId, updateLeagueInFirestore]);
 
     const handleRebidEnd = useCallback(async () => {
         if (currentLeague.status !== 'rebidding' || currentLeague.isPaused) return;
