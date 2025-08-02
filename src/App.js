@@ -3,6 +3,8 @@ import React, { useState, useEffect, createContext, useContext, useRef, useCallb
 import { initializeApp } from 'firebase/app';
 import {
     getAuth,
+    signInAnonymously,
+    signInWithCustomToken,
     onAuthStateChanged,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -23,9 +25,7 @@ import {
     getDoc // Import getDoc for global favorites check
 } from 'firebase/firestore';
 
-/* global __app_id */
-
-const APP_VERSION = process.env.REACT_APP_VERSION || "local";
+/* global __initial_auth_token, __app_id */
 
 // Define context for Firebase and Auth
 const FirebaseContext = createContext(null);
@@ -1288,58 +1288,27 @@ const EditRosterSettingsModal = ({ league, onSave, onClose }) => {
         onSave(league.id, settings);
     };
 
-    // --- CHANGE 1: Split the settings into two arrays ---
-    const positionInputs = ['QB', 'RB', 'WR', 'TE', 'DEF', 'K', 'FLEX', 'SUPERFLEX', 'BENCH'];
-    const timerInputs = ['bidDuration', 'intermission', 'rebidDuration'];
+    const rosterPositions = ['QB', 'RB', 'WR', 'TE', 'DEF', 'K', 'FLEX', 'SUPERFLEX', 'BENCH', 'bidDuration', 'intermission', 'rebidDuration'];
 
     return (
         <Modal title={`Edit Roster Settings for ${league.name}`} onClose={onClose}>
-            <form onSubmit={handleSubmit} className="p-4">
-
-                {/* --- CHANGE 2: Render positions in their own grid --- */}
-                <h4 className="text-md font-semibold text-gray-700 mb-2">Position Settings</h4>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    {positionInputs.map(pos => (
-                        <div key={pos} className="flex items-center justify-between">
-                            <label htmlFor={pos} className="block text-gray-700 text-sm font-bold">
-                                {pos}:
-                            </label>
-                            <input
-                                type="number"
-                                id={pos}
-                                className="shadow appearance-none border rounded-md w-20 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-center"
-                                value={settings[pos] !== undefined ? settings[pos] : ''}
-                                onChange={(e) => handleChange(pos, e.target.value)}
-                                min="0"
-                                step="1"
-                            />
-                        </div>
-                    ))}
-                </div>
-
-                <hr className="my-4" />
-
-                {/* --- CHANGE 3: Render timers in their own single-column layout --- */}
-                <h4 className="text-md font-semibold text-gray-700 mb-2">Timer Settings (in seconds)</h4>
-                <div className="flex flex-col space-y-2">
-                     {timerInputs.map(timer => (
-                        <div key={timer} className="flex items-center justify-between">
-                            <label htmlFor={timer} className="block text-gray-700 text-sm font-bold capitalize">
-                                {timer.replace('Duration', ' Duration')}:
-                            </label>
-                            <input
-                                type="number"
-                                id={timer}
-                                className="shadow appearance-none border rounded-md w-20 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-center"
-                                value={settings[timer] !== undefined ? settings[timer] : ''}
-                                onChange={(e) => handleChange(timer, e.target.value)}
-                                min="0"
-                                step="1"
-                            />
-                        </div>
-                    ))}
-                </div>
-                
+            <form onSubmit={handleSubmit} className="p-4 grid grid-cols-2 gap-4">
+                {rosterPositions.map(pos => (
+                    <div key={pos} className="flex items-center justify-between">
+                        <label htmlFor={pos} className="block text-gray-700 text-sm font-bold">
+                            {pos}:
+                        </label>
+                        <input
+                            type="number"
+                            id={pos}
+                            className="shadow appearance-none border rounded-md w-20 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-center"
+                            value={settings[pos] !== undefined ? settings[pos] : ''}
+                            onChange={(e) => handleChange(pos, e.target.value)}
+                            min="0"
+                            step="1"
+                        />
+                    </div>
+                ))}
                 <div className="col-span-2 flex justify-center mt-6">
                     <button
                         type="submit"
@@ -1629,6 +1598,80 @@ const getRandomAvailablePlayerIndex = (players) => {
     return availablePlayerIndices[randomIndex];
 };
 
+// Add this new component to your App.js file
+const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) => {
+    const getAvailableSpots = () => {
+        if (!team || !player) return [];
+
+        // --- Calculate current roster counts from players already assigned a spot ---
+        const assignedCounts = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0, K: 0, FLEX: 0, SUPERFLEX: 0, BENCH: 0 };
+        team.roster.forEach(p => {
+            if (p.assignedSpot && p.assignedSpot !== 'UNASSIGNED' && assignedCounts[p.assignedSpot] !== undefined) {
+                assignedCounts[p.assignedSpot]++;
+            }
+        });
+
+        const spots = [];
+        const playerPos = player.position === 'DST' ? 'DEF' : player.position;
+
+        // 1. Primary Position Spot
+        if ((rosterSettings[playerPos] || 0) > 0 && assignedCounts[playerPos] < rosterSettings[playerPos]) {
+            spots.push(playerPos);
+        }
+
+        // 2. Superflex Spot
+        const isSuperflexEligible = ['QB', 'RB', 'WR', 'TE'].includes(player.position);
+        if (isSuperflexEligible && (rosterSettings.SUPERFLEX || 0) > 0 && assignedCounts.SUPERFLEX < rosterSettings.SUPERFLEX) {
+            spots.push('SUPERFLEX');
+        }
+        
+        // 3. Flex Spot
+        const isFlexEligible = ['RB', 'WR', 'TE'].includes(player.position);
+        if (isFlexEligible && (rosterSettings.FLEX || 0) > 0 && assignedCounts.FLEX < rosterSettings.FLEX) {
+            spots.push('FLEX');
+        }
+
+        // 4. Bench Spot
+        if ((rosterSettings.BENCH || 0) > 0 && assignedCounts.BENCH < rosterSettings.BENCH) {
+            spots.push('BENCH');
+        }
+        
+        return [...new Set(spots)];
+    };
+
+    const availableSpots = getAvailableSpots();
+
+    return (
+        <Modal title={`You Won ${player.name}!`} onClose={onClose}>
+            <div className="p-4 text-center">
+                <p className="text-lg text-gray-800 mb-6">
+                    Assign <span className="font-bold">{player.name} ({player.position})</span> to a roster spot.
+                </p>
+                <div className="flex flex-wrap justify-center gap-4">
+                    {availableSpots.length > 0 ? availableSpots.map(spot => (
+                        <button
+                            key={spot}
+                            onClick={() => onAssign(player.id, spot)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition-colors duration-200 shadow-md text-lg"
+                        >
+                            {spot}
+                        </button>
+                    )) : (
+                        <p className="text-red-500">No available starting spots for this position.</p>
+                    )}
+                </div>
+                 <button
+                    onClick={() => onAssign(player.id, 'BENCH')}
+                    className="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md"
+                >
+                    Assign to Bench
+                </button>
+            </div>
+        </Modal>
+    );
+};
+
+
 const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     const { db, userId, isAuthReady, isGlobalFavorite, toggleGlobalFavorite } = useFirebase();
     const [currentLeague, setCurrentLeague] = useState(league);
@@ -1645,9 +1688,10 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 	const [teamToEditBudget, setTeamToEditBudget] = useState(null);
     const [sortPosition, setSortPosition] = useState('All'); // For available players list
 	const [showBeerDutyModal, setShowBeerDutyModal] = useState(false); // ADDED
-	//const [lastBeerRequest, setLastBeerRequest] = useState(0); // ADDED	
+	const [lastBeerRequest, setLastBeerRequest] = useState(0); // ADDED	
     const [showAvailablePlayers, setShowAvailablePlayers] = useState(true); // New state for toggling available players
     const [showFavoritedPlayers, setShowFavoritedPlayers] = useState(true); // New state for toggling favorited players
+    const [playersToAssign, setPlayersToAssign] = useState([]);
     const lastProcessedPlayerId = useRef(null); // Prevents re-triggering modal for the same player
     const timerRef = useRef(null);
     const intermissionTimerRef = useRef(null);
@@ -1693,7 +1737,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 		setMessageModalContent("Team budget updated successfully!");
 	};
 	
-	const awardPlayerAndContinue = useCallback(async (player, winningTeamId, price, allBids) => {
+	const awardPlayerAndContinue = async (player, winningTeamId, price, allBids) => {
         const updatedPlayers = currentLeague.players.map(p =>
             p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
         );
@@ -1742,50 +1786,24 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             rebidInfo: null,
         });
         setBidAmount(0);
-    }, [currentLeague.players, currentLeague.teams, updateLeagueInFirestore, currentLeague.rosterSettings]);
-	
-	const handleAutoAssignPlayer = useCallback(async (player) => {
-		const team = currentLeague.teams.find(t => t.id === userId);
-		const rosterSettings = currentLeague.rosterSettings;
-		if (!team || !rosterSettings) return;
+    };
 
-		const roster = team.roster;
-		const assignedCounts = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0, K: 0, FLEX: 0, SUPERFLEX: 0, BENCH: 0 };
-		roster.forEach(p => {
-			if (p.assignedSpot && p.assignedSpot !== 'UNASSIGNED') {
-				assignedCounts[p.assignedSpot]++;
-			}
-		});
+    const handleConfirmAssignment = async (playerId, assignedSpot) => {
+        const team = currentLeague.teams.find(t => t.id === userId);
+        if (!team) return;
 
-		let assignedSpot = 'BENCH'; // Default to bench
-		const playerPos = player.position === 'DST' ? 'DEF' : player.position;
+        const updatedRoster = team.roster.map(p => 
+            p.playerId === playerId ? { ...p, assignedSpot } : p
+        );
 
-		// 1. Try to fill the primary position spot
-		if ((rosterSettings[playerPos] || 0) > assignedCounts[playerPos]) {
-			assignedSpot = playerPos;
-		}
-		// 2. Else, try to fill FLEX spot if eligible
-		else if (['RB', 'WR', 'TE'].includes(player.position) && (rosterSettings.FLEX || 0) > assignedCounts.FLEX) {
-			assignedSpot = 'FLEX';
-		}
-		// 3. Else, try to fill SUPERFLEX spot if eligible
-		else if (['QB', 'RB', 'WR', 'TE'].includes(player.position) && (rosterSettings.SUPERFLEX || 0) > assignedCounts.SUPERFLEX) {
-			assignedSpot = 'SUPERFLEX';
-		}
+        const updatedTeams = currentLeague.teams.map(t => 
+            t.id === userId ? { ...t, roster: updatedRoster } : t
+        );
+        
+        await updateLeagueInFirestore({ teams: updatedTeams });
 
-		// --- Create the updated roster and teams ---
-		const updatedRoster = roster.map(p =>
-			p.playerId === player.id ? { ...p, assignedSpot } : p
-		);
-		const updatedTeams = currentLeague.teams.map(t =>
-			t.id === userId ? { ...t, roster: updatedRoster } : t
-		);
-		
-		// Update the database with the new assignment
-		await updateLeagueInFirestore({ teams: updatedTeams });
-
-	}, [currentLeague.teams, currentLeague.rosterSettings, userId, updateLeagueInFirestore]);
-	
+        setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
+    };
 
     const handleRebidEnd = useCallback(async () => {
         if (currentLeague.status !== 'rebidding' || currentLeague.isPaused) return;
@@ -1852,7 +1870,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const winningTeamId = sortedRebids[0].bidderId;
             await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentRebids);
         }
-    }, [currentLeague, updateLeagueInFirestore, setMessageModalContent, setBidAmount, awardPlayerAndContinue]);
+    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount]);
 
 
     const handleBidEnd = useCallback(async () => {
@@ -1872,7 +1890,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const updatedPlayers = currentLeague.players.map(p =>
                 p.id === player.id ? { ...p, status: 'available' } : p
             );
-            const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
+            const intermissionDuration = 30;
             const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
             await updateLeagueInFirestore({
@@ -1896,33 +1914,33 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         const tiedBidders = sortedBids.filter(bid => bid.amount === highestBidAmount);
 
         if (tiedBidders.length > 1) {
-			const rebidDuration = currentLeague.rosterSettings?.rebidDuration || 15; // Add this line
+			const rebidDuration = currentLeague.rosterSettings?.rebidDuration || 15; // ADD THIS
 			await updateLeagueInFirestore({
 				status: 'rebidding',
 				currentPlayerIndex: currentLeague.currentPlayerIndex,
 				rebidInfo: {
 					originalTiedAmount: highestBidAmount,
 					tiedTeamIds: tiedBidders.map(b => b.bidderId),
-					rebidEndTime: new Date(Date.now() + rebidDuration * 1000) // Use the new variable
+					rebidEndTime: new Date(Date.now() + rebidDuration * 1000) // CHANGE THIS
 				},
-					currentBid: 0,
-					currentBidderId: null,
-					bidEndTime: null,
-					intermissionEndTime: null,
-					isPaused: false,
-					pausedAtRemainingTime: null,
-					activePlayerBids: {},
-					tiedBids: null,
-				});
-				setMessageModalContent(`A tie has occurred for ${player.name} at $${highestBidAmount}! Tied teams, please rebid.`);
-				setBidAmount(0);
+                currentBid: 0,
+                currentBidderId: null,
+                bidEndTime: null,
+                intermissionEndTime: null,
+                isPaused: false,
+                pausedAtRemainingTime: null,
+                activePlayerBids: {},
+                tiedBids: null,
+            });
+            setMessageModalContent(`A tie has occurred for ${player.name} at $${highestBidAmount}! Tied teams, please rebid.`);
+            setBidAmount(0);
         } else {
             const winningBid = sortedBids[0].amount;
             const winningTeamId = sortedBids[0].bidderId;
             await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentBids);
         }
-    }, [currentLeague, updateLeagueInFirestore, setMessageModalContent, setBidAmount, awardPlayerAndContinue]);
- 
+    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount, REBID_DURATION]);
+
 
     const handleAutoNominateNextPlayer = useCallback(async () => {
         const nextRandomPlayerIndex = getRandomAvailablePlayerIndex(currentLeague.players);
@@ -1993,8 +2011,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 						const userTeam = updatedLeagueData.teams.find(t => t.id === userId);
 						const rosteredPlayer = userTeam.roster.find(p => p.playerId === newLastDrafted.player.id);
 						if (rosteredPlayer && rosteredPlayer.assignedSpot === 'UNASSIGNED') {
-							// Call the new auto-assign function instead of showing the modal
-							handleAutoAssignPlayer(newLastDrafted.player);
+							setPlayersToAssign(prev => [...prev, newLastDrafted.player]);
 						}
 					}
 				} else {
@@ -2002,7 +2019,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				}
 			});
 			return () => unsubscribe();
-		}, [db, isAuthReady, currentLeague.id, onBackToLeagueDetails, appId, userId, handleAutoAssignPlayer]);
+		}, [db, isAuthReady, currentLeague.id, onBackToLeagueDetails, appId, userId]);
 		
     useEffect(() => {
         if (currentLeague.status === 'drafting' && !currentLeague.isPaused && currentLeague.bidEndTime) {
@@ -2128,7 +2145,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				updatePresence(false);
 			};
 		// This stable dependency array ensures the effect only runs once
-		}, [isAuthReady, userId, updateLeagueInFirestore, currentLeague.teams]);
+		}, [isAuthReady, userId, updateLeagueInFirestore]);
 
 
 
@@ -2137,7 +2154,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const randomPlayerIndex = getRandomAvailablePlayerIndex(currentLeague.players);
 
             if (randomPlayerIndex !== null) {
-                const bidDuration = currentLeague.rosterSettings?.bidDuration || 20;
+                const bidDuration = 20;
                 const bidEndTime = new Date(Date.now() + bidDuration * 1000);
 
                 await updateLeagueInFirestore({
@@ -2168,7 +2185,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             return;
         }
 
-        const bidDuration = currentLeague.rosterSettings?.bidDuration || 20;
+        const bidDuration = 20;
         const bidEndTime = new Date(Date.now() + bidDuration * 1000);
 
         await updateLeagueInFirestore({
@@ -2322,7 +2339,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
                 );
             }
 
-            const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
+            const intermissionDuration = 30;
             const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
             await updateLeagueInFirestore({
@@ -2372,7 +2389,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             return team;
         });
 
-        const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
+        const intermissionDuration = 30;
         const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
         await updateLeagueInFirestore({
@@ -2414,7 +2431,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 		const newRequest = { requesterId: userId, timestamp: new Date() };
 		const updatedRequests = [...(currentLeague.beerRequests || []), newRequest];
 		await updateLeagueInFirestore({ beerRequests: updatedRequests });
-        //setLastBeerRequest(now); // This was missing in your paste, ensures state updates
+        setLastBeerRequest(now); // This was missing in your paste, ensures state updates
 		localStorage.setItem(`lastBeerRequest_${currentLeague.id}_${userId}`, now.toString());
 		setMessageModalContent('Your beer request has been sent!');
 	};
@@ -2435,7 +2452,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				}
 			}
 		}
-	}, [currentLeague.beerRequests, currentLeague.beerDutyTeamId, userId, currentLeague.id, currentLeague.teams]);
+	}, [currentLeague.beerRequests, currentLeague.beerDutyTeamId, userId, currentLeague.id]);
 	
 
     const handleKickMember = async (memberIdToKick) => {
@@ -3257,6 +3274,16 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 					onClose={() => setMessageModalContent(null)}
 				/>
 			)}
+			
+			{playersToAssign.length > 0 && userTeam && (
+				<AssignPlayerModal
+					player={playersToAssign[0]}
+					team={userTeam}
+					rosterSettings={REQUIRED_ROSTER_SPOTS}
+					onClose={() => handleConfirmAssignment(playersToAssign[0].id, 'BENCH')}
+					onAssign={handleConfirmAssignment}
+				/>
+			)}
 		</div>
 	);
 };
@@ -3590,7 +3617,7 @@ const FavoritesScreen = ({ league, userId, onBackToLeagueDetails, isGlobalFavori
     );
 };
 
-const HomePage = ({ userId, onNavigate, isGlobalFavorite, toggleGlobalFavorite, masterPlayerList, appVersion }) => {
+const HomePage = ({ userId, onNavigate, isGlobalFavorite, toggleGlobalFavorite, masterPlayerList }) => {
 	const [searchTerm, setSearchTerm] = useState('');
     const [sortPosition, setSortPosition] = useState('All');
 
@@ -3674,10 +3701,6 @@ const HomePage = ({ userId, onNavigate, isGlobalFavorite, toggleGlobalFavorite, 
                         </div>
                     </>
                 )}
-				{/* ADD THE VERSION NUMBER HERE */}
-            <p className="text-xs text-gray-400 mt-8">
-                Version: {appVersion}
-            </p>
             </div>
         </div>
     );
@@ -3714,7 +3737,7 @@ const App = () => {
             });
             return () => unsubscribe();
         }
-    }, [selectedLeague, db, isAuthReady, appId, currentView]);
+    }, [selectedLeague?.id, db, isAuthReady, appId, currentView]); // NEW: Add currentView to the dependency array
 
     const handleNavigate = (view) => {
         setCurrentView(view);
@@ -3776,7 +3799,6 @@ const App = () => {
                         isGlobalFavorite={isGlobalFavorite}
                         toggleGlobalFavorite={toggleGlobalFavorite}
                         masterPlayerList={MASTER_PLAYER_LIST} /* Pass the master list */
-						appVersion={APP_VERSION} // Add this line
                     />
                 )}
                 {currentView === 'leagues' && (
