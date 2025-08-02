@@ -25,6 +25,8 @@ import {
 
 /* global __app_id */
 
+const APP_VERSION = "v1.1.0"; // Or any version number you like
+
 // Define context for Firebase and Auth
 const FirebaseContext = createContext(null);
 
@@ -3615,7 +3617,7 @@ const FavoritesScreen = ({ league, userId, onBackToLeagueDetails, isGlobalFavori
     );
 };
 
-const HomePage = ({ userId, onNavigate, isGlobalFavorite, toggleGlobalFavorite, masterPlayerList }) => {
+const HomePage = ({ userId, onNavigate, isGlobalFavorite, toggleGlobalFavorite, masterPlayerList, appVersion }) => {
 	const [searchTerm, setSearchTerm] = useState('');
     const [sortPosition, setSortPosition] = useState('All');
 
@@ -3699,6 +3701,10 @@ const HomePage = ({ userId, onNavigate, isGlobalFavorite, toggleGlobalFavorite, 
                         </div>
                     </>
                 )}
+				{/* ADD THE VERSION NUMBER HERE */}
+            <p className="text-xs text-gray-400 mt-8">
+                Version: {appVersion}
+            </p>
             </div>
         </div>
     );
@@ -3797,6 +3803,7 @@ const App = () => {
                         isGlobalFavorite={isGlobalFavorite}
                         toggleGlobalFavorite={toggleGlobalFavorite}
                         masterPlayerList={MASTER_PLAYER_LIST} /* Pass the master list */
+						appVersion={APP_VERSION} // Add this line
                     />
                 )}
                 {currentView === 'leagues' && (
