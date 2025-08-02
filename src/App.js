@@ -3,8 +3,6 @@ import React, { useState, useEffect, createContext, useContext, useRef, useCallb
 import { initializeApp } from 'firebase/app';
 import {
     getAuth,
-    signInAnonymously,
-    signInWithCustomToken,
     onAuthStateChanged,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -25,7 +23,7 @@ import {
     getDoc // Import getDoc for global favorites check
 } from 'firebase/firestore';
 
-/* global __initial_auth_token, __app_id */
+/* global __app_id */
 
 // Define context for Firebase and Auth
 const FirebaseContext = createContext(null);
@@ -1688,7 +1686,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 	const [teamToEditBudget, setTeamToEditBudget] = useState(null);
     const [sortPosition, setSortPosition] = useState('All'); // For available players list
 	const [showBeerDutyModal, setShowBeerDutyModal] = useState(false); // ADDED
-	const [lastBeerRequest, setLastBeerRequest] = useState(0); // ADDED	
+	//const [lastBeerRequest, setLastBeerRequest] = useState(0); // ADDED	
     const [showAvailablePlayers, setShowAvailablePlayers] = useState(true); // New state for toggling available players
     const [showFavoritedPlayers, setShowFavoritedPlayers] = useState(true); // New state for toggling favorited players
     const [playersToAssign, setPlayersToAssign] = useState([]);
@@ -1870,7 +1868,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const winningTeamId = sortedRebids[0].bidderId;
             await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentRebids);
         }
-    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount]);
+    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount, awardPlayerAndContinue]);
 
 
     const handleBidEnd = useCallback(async () => {
@@ -1939,7 +1937,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const winningTeamId = sortedBids[0].bidderId;
             await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentBids);
         }
-    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount]);
+    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount, awardPlayerAndContinue]);
  
 
     const handleAutoNominateNextPlayer = useCallback(async () => {
@@ -2145,7 +2143,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				updatePresence(false);
 			};
 		// This stable dependency array ensures the effect only runs once
-		}, [isAuthReady, userId, updateLeagueInFirestore]);
+		}, [isAuthReady, userId, updateLeagueInFirestore, currentLeague.teams]);
 
 
 
@@ -3737,7 +3735,7 @@ const App = () => {
             });
             return () => unsubscribe();
         }
-    }, [selectedLeague?.id, db, isAuthReady, appId, currentView]); // NEW: Add currentView to the dependency array
+    }, [selectedLeague, db, isAuthReady, appId, currentView]);
 
     const handleNavigate = (view) => {
         setCurrentView(view);
