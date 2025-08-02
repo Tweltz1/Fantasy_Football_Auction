@@ -3257,16 +3257,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 					onClose={() => setMessageModalContent(null)}
 				/>
 			)}
-			
-			{playersToAssign.length > 0 && userTeam && (
-				<AssignPlayerModal
-					player={playersToAssign[0]}
-					team={userTeam}
-					rosterSettings={REQUIRED_ROSTER_SPOTS}
-					onClose={() => handleConfirmAssignment(playersToAssign[0].id, 'BENCH')}
-					onAssign={handleConfirmAssignment}
-				/>
-			)}
 		</div>
 	);
 };
