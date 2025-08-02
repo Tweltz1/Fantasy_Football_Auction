@@ -1629,73 +1629,6 @@ const getRandomAvailablePlayerIndex = (players) => {
     return availablePlayerIndices[randomIndex];
 };
 
-const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) => {
-    const getAvailableSpots = () => {
-        if (!team || !player) return [];
-
-        // --- Calculate current roster counts from players already assigned a spot ---
-        const assignedCounts = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0, K: 0, FLEX: 0, SUPERFLEX: 0, BENCH: 0 };
-        team.roster.forEach(p => {
-            if (p.assignedSpot && p.assignedSpot !== 'UNASSIGNED' && assignedCounts[p.assignedSpot] !== undefined) {
-                assignedCounts[p.assignedSpot]++;
-            }
-        });
-
-        const spots = [];
-        const playerPos = player.position === 'DST' ? 'DEF' : player.position;
-
-        // 1. Primary Position Spot
-        if ((rosterSettings[playerPos] || 0) > 0 && assignedCounts[playerPos] < rosterSettings[playerPos]) {
-            spots.push(playerPos);
-        }
-
-        // 2. Superflex Spot
-        const isSuperflexEligible = ['QB', 'RB', 'WR', 'TE'].includes(player.position);
-        if (isSuperflexEligible && (rosterSettings.SUPERFLEX || 0) > 0 && assignedCounts.SUPERFLEX < rosterSettings.SUPERFLEX) {
-            spots.push('SUPERFLEX');
-        }
-        
-        // 3. Flex Spot
-        const isFlexEligible = ['RB', 'WR', 'TE'].includes(player.position);
-        if (isFlexEligible && (rosterSettings.FLEX || 0) > 0 && assignedCounts.FLEX < rosterSettings.FLEX) {
-            spots.push('FLEX');
-        }
-
-        // 4. Bench Spot
-        if ((rosterSettings.BENCH || 0) > 0 && assignedCounts.BENCH < rosterSettings.BENCH) {
-            spots.push('BENCH');
-        }
-        
-        return [...new Set(spots)];
-    };
-
-    const availableSpots = getAvailableSpots();
-
-    return (
-        <Modal title={`You Won ${player.name}!`} onClose={onClose}>
-            <div className="p-4 text-center">
-                <p className="text-lg text-gray-800 mb-6">
-                    Assign <span className="font-bold">{player.name} ({player.position})</span> to a roster spot.
-                </p>
-                <div className="flex flex-wrap justify-center gap-4">
-                    {availableSpots.length > 0 ? availableSpots.map(spot => (
-                        <button
-                            key={spot}
-                            onClick={() => onAssign(player.id, spot)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition-colors duration-200 shadow-md text-lg"
-                        >
-                            {spot}
-                        </button>
-                    )) : (
-                        <p className="text-red-500">No available starting spots for this position.</p>
-                    )}
-                </div>
-            </div>
-        </Modal>
-    );
-};
-
-
 const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     const { db, userId, isAuthReady, isGlobalFavorite, toggleGlobalFavorite } = useFirebase();
     const [currentLeague, setCurrentLeague] = useState(league);
@@ -1715,7 +1648,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 	//const [lastBeerRequest, setLastBeerRequest] = useState(0); // ADDED	
     const [showAvailablePlayers, setShowAvailablePlayers] = useState(true); // New state for toggling available players
     const [showFavoritedPlayers, setShowFavoritedPlayers] = useState(true); // New state for toggling favorited players
-    const [playersToAssign, setPlayersToAssign] = useState([]);
     const lastProcessedPlayerId = useRef(null); // Prevents re-triggering modal for the same player
     const timerRef = useRef(null);
     const intermissionTimerRef = useRef(null);
@@ -1811,23 +1743,49 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         });
         setBidAmount(0);
     }, [currentLeague.players, currentLeague.teams, updateLeagueInFirestore, currentLeague.rosterSettings]);
-
-    const handleConfirmAssignment = useCallback(async (playerId, assignedSpot) => {
+	
+	const handleAutoAssignPlayer = useCallback(async (player) => {
 		const team = currentLeague.teams.find(t => t.id === userId);
-		if (!team) return;
+		const rosterSettings = currentLeague.rosterSettings;
+		if (!team || !rosterSettings) return;
 
-		const updatedRoster = team.roster.map(p =>
-			p.playerId === playerId ? { ...p, assignedSpot } : p
+		const roster = team.roster;
+		const assignedCounts = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0, K: 0, FLEX: 0, SUPERFLEX: 0, BENCH: 0 };
+		roster.forEach(p => {
+			if (p.assignedSpot && p.assignedSpot !== 'UNASSIGNED') {
+				assignedCounts[p.assignedSpot]++;
+			}
+		});
+
+		let assignedSpot = 'BENCH'; // Default to bench
+		const playerPos = player.position === 'DST' ? 'DEF' : player.position;
+
+		// 1. Try to fill the primary position spot
+		if ((rosterSettings[playerPos] || 0) > assignedCounts[playerPos]) {
+			assignedSpot = playerPos;
+		}
+		// 2. Else, try to fill FLEX spot if eligible
+		else if (['RB', 'WR', 'TE'].includes(player.position) && (rosterSettings.FLEX || 0) > assignedCounts.FLEX) {
+			assignedSpot = 'FLEX';
+		}
+		// 3. Else, try to fill SUPERFLEX spot if eligible
+		else if (['QB', 'RB', 'WR', 'TE'].includes(player.position) && (rosterSettings.SUPERFLEX || 0) > assignedCounts.SUPERFLEX) {
+			assignedSpot = 'SUPERFLEX';
+		}
+
+		// --- Create the updated roster and teams ---
+		const updatedRoster = roster.map(p =>
+			p.playerId === player.id ? { ...p, assignedSpot } : p
 		);
-
 		const updatedTeams = currentLeague.teams.map(t =>
 			t.id === userId ? { ...t, roster: updatedRoster } : t
 		);
 		
+		// Update the database with the new assignment
 		await updateLeagueInFirestore({ teams: updatedTeams });
 
-		setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
-	}, [currentLeague.teams, userId, updateLeagueInFirestore, setPlayersToAssign]); // Add setPlayersToAssign here
+	}, [currentLeague.teams, currentLeague.rosterSettings, userId, updateLeagueInFirestore]);
+	
 
     const handleRebidEnd = useCallback(async () => {
         if (currentLeague.status !== 'rebidding' || currentLeague.isPaused) return;
@@ -2035,7 +1993,8 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 						const userTeam = updatedLeagueData.teams.find(t => t.id === userId);
 						const rosteredPlayer = userTeam.roster.find(p => p.playerId === newLastDrafted.player.id);
 						if (rosteredPlayer && rosteredPlayer.assignedSpot === 'UNASSIGNED') {
-							setPlayersToAssign(prev => [...prev, newLastDrafted.player]);
+							// Call the new auto-assign function instead of showing the modal
+							handleAutoAssignPlayer(newLastDrafted.player);
 						}
 					}
 				} else {
