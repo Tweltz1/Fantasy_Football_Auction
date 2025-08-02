@@ -8,7 +8,6 @@ import {
     onAuthStateChanged,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    connectAuthEmulator, // <<< ADD THIS LINE
     signOut
 } from 'firebase/auth';
 import {
@@ -22,9 +21,8 @@ import {
     where,
     getDocs,
     deleteDoc,
-    setDoc,
-    connectFirestoreEmulator, // <<< ADD THIS LINE
-    getDoc
+    setDoc, // Import setDoc for global favorites
+    getDoc // Import getDoc for global favorites check
 } from 'firebase/firestore';
 
 /* global __initial_auth_token, __app_id */
@@ -325,13 +323,12 @@ const FirebaseProvider = ({ children }) => {
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [globalFavorites, setGlobalFavorites] = useState([]); // New state for global favorites
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-	const firebaseConfigRef = useRef(null);
-	
-	
+
     useEffect(() => {
-		try {
-			// YOUR FIREBASE CONFIG OBJECT IS NOW DIRECTLY INCLUDED HERE.
-			const firebaseConfig = {
+        try {
+            // YOUR FIREBASE CONFIG OBJECT IS NOW DIRECTLY INCLUDED HERE.
+            // DO NOT CHANGE THIS SECTION UNLESS YOUR FIREBASE PROJECT CONFIG CHANGES.
+            const firebaseConfig = {
                 apiKey: "AIzaSyDOR5iJMqiKEkItcm4KAa_9Ny-y1ElTHcU",
                 authDomain: "hood-auction-draft---draft.firebaseapp.com",
                 projectId: "hood-auction-draft---draft",
@@ -339,30 +336,17 @@ const FirebaseProvider = ({ children }) => {
                 messagingSenderId: "889293648217",
                 appId: "1:889293648217:web:894986b2221c0b66ad9c48",
             };
-			
-			firebaseConfigRef.current = firebaseConfig;
-			
-			const initializedApp = initializeApp(firebaseConfig);
-			const firestoreDb = getFirestore(initializedApp);
-			const firebaseAuth = getAuth(initializedApp);
 
-			// --- ADD THIS BLOCK HERE ---
-			// This checks if the app is running on your local machine.
-			if (window.location.hostname === "localhost") {
-				console.log("Development mode: Connecting to local Firebase emulators.");
-				connectAuthEmulator(firebaseAuth, "http://localhost:9099");
-				const serverIp = "10.10.7.102"
-				connectAuthEmulator(firebaseAuth, `http://${serverIp}`);
-				connectFirestoreEmulator(firestoreDb, serverIp, 8080);
-			}
-			// --- END OF BLOCK ---
+            const initializedApp = initializeApp(firebaseConfig);
+            const firestoreDb = getFirestore(initializedApp);
+            const firebaseAuth = getAuth(initializedApp);
 
-			setApp(initializedApp);
-			setDb(firestoreDb);
-			setAuth(firebaseAuth);
+            setApp(initializedApp);
+            setDb(firestoreDb);
+            setAuth(firebaseAuth);
 
-			// Listen for auth state changes
-			const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
+            // Listen for auth state changes
+            const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
                 if (user) {
                     setUserId(user.uid);
                     setCurrentUserEmail(user.email);
@@ -425,7 +409,7 @@ const FirebaseProvider = ({ children }) => {
     }, [globalFavorites]);
 
     return (
-        <FirebaseContext.Provider value={{ app, db, auth, userId, currentUserEmail, isAuthReady, globalFavorites, toggleGlobalFavorite, isGlobalFavorite, MASTER_PLAYER_LIST, firebaseConfig: firebaseConfigRef.current }}>
+        <FirebaseContext.Provider value={{ app, db, auth, userId, currentUserEmail, isAuthReady, globalFavorites, toggleGlobalFavorite, isGlobalFavorite, MASTER_PLAYER_LIST }}>
             {children}
         </FirebaseContext.Provider>
     );
@@ -607,7 +591,7 @@ const Header = ({ onNavigate, currentView, currentUserEmail, onLogout, showFavor
     );
 };
 
-const LeagueList = ({ onSelectLeague, userId, onEditRosterSettings, onEditTeamProfile, onDeleteLeague,onLoadBackup }) => {
+const LeagueList = ({ onSelectLeague, userId, onEditRosterSettings, onEditTeamProfile, onDeleteLeague }) => {
     const { db, isAuthReady } = useFirebase();
     const [leagues, setLeagues] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -709,13 +693,6 @@ const LeagueList = ({ onSelectLeague, userId, onEditRosterSettings, onEditTeamPr
                                                     >
                                                         Edit Roster
                                                     </button>
-													{/* --- NEW BUTTON ADDED HERE --- */}
-													<button
-														onClick={() => onLoadBackup(league)}
-														className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-3 rounded-md text-sm transition-colors duration-200 shadow-sm"
-													>
-														Load Backup
-													</button>
                                                     <button
                                                         onClick={() => onDeleteLeague(league.id, league.name)}
                                                         className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-md transition-colors duration-200 shadow-sm"
@@ -760,10 +737,6 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
     const [selectedLeagueForEdit, setSelectedLeagueForEdit] = useState(null);
     const [showEditTeamProfileModal, setShowEditTeamProfileModal] = useState(false);
     const [teamToEdit, setTeamToEdit] = useState(null);
-	// --- NEW STATE AND REF ADDED HERE ---
-    const [leagueToLoad, setLeagueToLoad] = useState(null);
-    const fileInputRef = useRef(null);
-    // --- END OF NEW ADDITIONS ---
     const [message, setMessage] = useState('');
     const [messageModalContent, setMessageModalContent] = useState(null);
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -779,6 +752,9 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
         FLEX: 1,
         SUPERFLEX: 1,
         BENCH: 6,
+		bidDuration: 20,       // ADD THIS
+		intermission: 30,    // ADD THIS
+		rebidDuration: 15,     // ADD THIS
     };
 
     const handleCreateLeague = async (leagueName, joinPassword) => {
@@ -818,47 +794,7 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
             setMessage("Error creating league. Please try again.");
         }
     };
-	
-	// --- ADD THESE TWO NEW FUNCTIONS ---
-    const handleLoadBackup = (league) => {
-        setLeagueToLoad(league);
-        fileInputRef.current.click();
-    };
 
-    const handleLoadBackupFile = (event) => {
-        const file = event.target.files[0];
-        if (!file || !leagueToLoad) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const backupData = JSON.parse(e.target.result);
-                if (!backupData.teams || !backupData.players) {
-                    throw new Error("Invalid backup file format.");
-                }
-                setMessageModalContent({
-                    title: "Confirm Backup Load",
-                    message: `Are you sure you want to overwrite league "${leagueToLoad.name}"? This action cannot be undone.`,
-                    onConfirm: async () => {
-                        const leagueDocRef = doc(db, `artifacts/${appId}/public/data/leagues`, leagueToLoad.id);
-                        await updateDoc(leagueDocRef, backupData);
-                        setMessageModalContent(`Successfully restored league "${leagueToLoad.name}"!`);
-                        setLeagueToLoad(null);
-                    },
-                    onCancel: () => {
-                        setMessageModalContent(null);
-                        setLeagueToLoad(null);
-                    }
-                });
-            } catch (error) {
-                setMessageModalContent(`Error: ${error.message}`);
-                setLeagueToLoad(null);
-            } finally {
-                event.target.value = null;
-            }
-        };
-        reader.readAsText(file);
-	};
     const handleJoinLeague = async (leagueName, joinPassword) => {
         if (!db || !isAuthReady || !userId) {
             setMessage("Firebase not ready or user not authenticated.");
@@ -989,16 +925,7 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
 
     return (
         <div className="container mx-auto p-4 font-inter">
-			{/* --- NEW HIDDEN FILE INPUT ADDED HERE --- */}
-				<input
-					type="file"
-					accept=".json"
-					ref={fileInputRef}
-					onChange={handleLoadBackupFile}
-					className="hidden"
-				/>
             <div className="flex space-x-4 mb-6">
-				
                 <button
                     onClick={() => setShowCreateModal(true)}
                     className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
@@ -1022,14 +949,7 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
                 </div>
             )}
 
-            <LeagueList 
-            onSelectLeague={onSelectLeague} 
-            userId={userId} 
-            onEditRosterSettings={handleEditRosterSettings} 
-            onEditTeamProfile={handleEditTeamProfile} 
-            onDeleteLeague={handleDeleteLeague}
-            onLoadBackup={handleLoadBackup}  // <<< Pass the handler here
-			/>
+            <LeagueList onSelectLeague={onSelectLeague} userId={userId} onEditRosterSettings={handleEditRosterSettings} onEditTeamProfile={handleEditTeamProfile} onDeleteLeague={handleDeleteLeague} />
 
             {showCreateModal && (
                 <Modal title="Create New League" onClose={() => setShowCreateModal(false)}>
@@ -1062,19 +982,19 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
                 />
             )}
 
-            {messageModalContent && typeof messageModalContent === 'object' && (messageModalContent.title === "Confirm Deletion" || messageModalContent.title === "Confirm Backup Load" || messageModalContent.title === "Confirm Kick") ? (
-		<ConfirmationModal
-			title={messageModalContent.title}
-			message={messageModalContent.message}
-			onConfirm={messageModalContent.onConfirm}
-			onCancel={messageModalContent.onCancel}
-		/>
-	) : messageModalContent && (
-		<NotificationModal
-			message={typeof messageModalContent === 'string' ? messageModalContent : 'An important message appeared.'} // Now handles string messages safely
-			onClose={() => setMessageModalContent(null)}
-		/>
-	)}
+            {messageModalContent && typeof messageModalContent === 'object' && messageModalContent.title === "Confirm Deletion" ? (
+                <ConfirmationModal
+                    title={messageModalContent.title}
+                    message={messageModalContent.message}
+                    onConfirm={messageModalContent.onConfirm}
+                    onCancel={messageModalContent.onCancel}
+                />
+            ) : messageModalContent && (
+                <NotificationModal
+                    message={messageModalContent}
+                    onClose={() => setMessageModalContent(null)}
+                />
+            )}
         </div>
     );
 };
@@ -1368,7 +1288,7 @@ const EditRosterSettingsModal = ({ league, onSave, onClose }) => {
         onSave(league.id, settings);
     };
 
-    const rosterPositions = ['QB', 'RB', 'WR', 'TE', 'DEF', 'K', 'FLEX', 'SUPERFLEX', 'BENCH'];
+    const rosterPositions = ['QB', 'RB', 'WR', 'TE', 'DEF', 'K', 'FLEX', 'SUPERFLEX', 'BENCH', 'bidDuration', 'intermission', 'rebidDuration'];
 
     return (
         <Modal title={`Edit Roster Settings for ${league.name}`} onClose={onClose}>
@@ -1753,7 +1673,7 @@ const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) 
 
 
 const DraftScreen = ({ league, onBackToLeagueDetails }) => {
-    const { db, userId, isAuthReady, isGlobalFavorite, toggleGlobalFavorite, firebaseConfig } = useFirebase();
+    const { db, userId, isAuthReady, isGlobalFavorite, toggleGlobalFavorite } = useFirebase();
     const [currentLeague, setCurrentLeague] = useState(league);
     const [bidAmount, setBidAmount] = useState(0);
     const [quickBid1, setQuickBid1] = useState(() => parseInt(localStorage.getItem('quickBid1') || '5', 10));
@@ -1790,7 +1710,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 
     const TOTAL_REQUIRED_ROSTER_SLOTS = Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
 
-    const REBID_DURATION = 15;
+    //const REBID_DURATION = 15;
 
     useEffect(() => {
         localStorage.setItem('quickBid1', quickBid1.toString());
@@ -1847,7 +1767,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             bidHistory: allBids.map(bid => ({ ...bid, timestamp: bid.timestamp.getTime ? bid.timestamp.getTime() : bid.timestamp }))
         };
 
-        const intermissionDuration = 30;
+        const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
         const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
         await updateLeagueInFirestore({
@@ -1869,51 +1789,21 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     };
 
     const handleConfirmAssignment = async (playerId, assignedSpot) => {
-		// This line gets the guaranteed latest data from the ref
-		const latestLeague = leagueRef.current; 
-		const team = latestLeague.teams.find(t => t.id === userId);
+        const team = currentLeague.teams.find(t => t.id === userId);
+        if (!team) return;
 
-		if (!team) {
-			console.error("Assign Error: Could not find your team...");
-			return;
-		}
-		
-		// The rest of the function should use 'latestLeague' as well
-		const updatedRoster = team.roster.map(p => 
-			p.playerId === playerId ? { ...p, assignedSpot } : p
-		);
+        const updatedRoster = team.roster.map(p => 
+            p.playerId === playerId ? { ...p, assignedSpot } : p
+        );
 
-		const updatedTeams = latestLeague.teams.map(t => 
-			t.id === userId ? { ...t, roster: updatedRoster } : t
-		);
-		
-		await updateLeagueInFirestore({ teams: updatedTeams });
+        const updatedTeams = currentLeague.teams.map(t => 
+            t.id === userId ? { ...t, roster: updatedRoster } : t
+        );
+        
+        await updateLeagueInFirestore({ teams: updatedTeams });
 
-		setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
-	};
-	
-	// --- ADD THIS ENTIRE NEW FUNCTION ---
-    const handleDownloadBackup = () => {
-        try {
-            const draftState = leagueRef.current;
-            const jsonString = JSON.stringify(draftState, null, 2);
-            const blob = new Blob([jsonString], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            a.download = `draft-backup-${timestamp}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            setMessageModalContent("Backup file has been downloaded successfully!");
-        } catch (error) {
-            console.error("Error creating backup file:", error);
-            setMessageModalContent(`Backup failed: ${error.message}`);
-        }
+        setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
     };
-    // --- END OF NEW FUNCTION ---
 
     const handleRebidEnd = useCallback(async () => {
         if (currentLeague.status !== 'rebidding' || currentLeague.isPaused) return;
@@ -2024,14 +1914,15 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         const tiedBidders = sortedBids.filter(bid => bid.amount === highestBidAmount);
 
         if (tiedBidders.length > 1) {
-            await updateLeagueInFirestore({
-                status: 'rebidding',
-                currentPlayerIndex: currentLeague.currentPlayerIndex,
-                rebidInfo: {
-                    originalTiedAmount: highestBidAmount,
-                    tiedTeamIds: tiedBidders.map(b => b.bidderId),
-                    rebidEndTime: new Date(Date.now() + REBID_DURATION * 1000)
-                },
+			const rebidDuration = currentLeague.rosterSettings?.rebidDuration || 15; // ADD THIS
+			await updateLeagueInFirestore({
+				status: 'rebidding',
+				currentPlayerIndex: currentLeague.currentPlayerIndex,
+				rebidInfo: {
+					originalTiedAmount: highestBidAmount,
+					tiedTeamIds: tiedBidders.map(b => b.bidderId),
+					rebidEndTime: new Date(Date.now() + rebidDuration * 1000) // CHANGE THIS
+				},
                 currentBid: 0,
                 currentBidderId: null,
                 bidEndTime: null,
@@ -2055,7 +1946,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         const nextRandomPlayerIndex = getRandomAvailablePlayerIndex(currentLeague.players);
 
         if (nextRandomPlayerIndex !== null) {
-            const bidDuration = 20;
+            const bidDuration = currentLeague.rosterSettings?.bidDuration || 20;
             const bidEndTime = new Date(Date.now() + bidDuration * 1000);
 
             await updateLeagueInFirestore({
@@ -2816,14 +2707,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				)}
 				{isLeagueAdmin && (currentLeague.status === 'drafting' || currentLeague.status === 'intermission' || currentLeague.status === 'pending' || currentLeague.status === 'tied-bid-resolution' || currentLeague.status === 'rebidding') && (
 					<div className="flex flex-wrap gap-3 mb-6">
-						{/* --- NEW BUTTON ADDED HERE --- */}
-						<button
-							onClick={handleDownloadBackup}
-							className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
-						>
-							Download Backup
-						</button>
-						
 						<button
 							onClick={handlePauseResumeDraft}
 							className={`font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md ${currentLeague.isPaused ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-orange-500 hover:bg-orange-600'} text-white`}
