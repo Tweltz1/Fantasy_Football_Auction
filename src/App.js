@@ -1288,27 +1288,58 @@ const EditRosterSettingsModal = ({ league, onSave, onClose }) => {
         onSave(league.id, settings);
     };
 
-    const rosterPositions = ['QB', 'RB', 'WR', 'TE', 'DEF', 'K', 'FLEX', 'SUPERFLEX', 'BENCH', 'bidDuration', 'intermission', 'rebidDuration'];
+    // --- CHANGE 1: Split the settings into two arrays ---
+    const positionInputs = ['QB', 'RB', 'WR', 'TE', 'DEF', 'K', 'FLEX', 'SUPERFLEX', 'BENCH'];
+    const timerInputs = ['bidDuration', 'intermission', 'rebidDuration'];
 
     return (
         <Modal title={`Edit Roster Settings for ${league.name}`} onClose={onClose}>
-            <form onSubmit={handleSubmit} className="p-4 grid grid-cols-2 gap-4">
-                {rosterPositions.map(pos => (
-                    <div key={pos} className="flex items-center justify-between">
-                        <label htmlFor={pos} className="block text-gray-700 text-sm font-bold">
-                            {pos}:
-                        </label>
-                        <input
-                            type="number"
-                            id={pos}
-                            className="shadow appearance-none border rounded-md w-20 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-center"
-                            value={settings[pos] !== undefined ? settings[pos] : ''}
-                            onChange={(e) => handleChange(pos, e.target.value)}
-                            min="0"
-                            step="1"
-                        />
-                    </div>
-                ))}
+            <form onSubmit={handleSubmit} className="p-4">
+
+                {/* --- CHANGE 2: Render positions in their own grid --- */}
+                <h4 className="text-md font-semibold text-gray-700 mb-2">Position Settings</h4>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                    {positionInputs.map(pos => (
+                        <div key={pos} className="flex items-center justify-between">
+                            <label htmlFor={pos} className="block text-gray-700 text-sm font-bold">
+                                {pos}:
+                            </label>
+                            <input
+                                type="number"
+                                id={pos}
+                                className="shadow appearance-none border rounded-md w-20 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-center"
+                                value={settings[pos] !== undefined ? settings[pos] : ''}
+                                onChange={(e) => handleChange(pos, e.target.value)}
+                                min="0"
+                                step="1"
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                <hr className="my-4" />
+
+                {/* --- CHANGE 3: Render timers in their own single-column layout --- */}
+                <h4 className="text-md font-semibold text-gray-700 mb-2">Timer Settings (in seconds)</h4>
+                <div className="flex flex-col space-y-2">
+                     {timerInputs.map(timer => (
+                        <div key={timer} className="flex items-center justify-between">
+                            <label htmlFor={timer} className="block text-gray-700 text-sm font-bold capitalize">
+                                {timer.replace('Duration', ' Duration')}:
+                            </label>
+                            <input
+                                type="number"
+                                id={timer}
+                                className="shadow appearance-none border rounded-md w-20 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-center"
+                                value={settings[timer] !== undefined ? settings[timer] : ''}
+                                onChange={(e) => handleChange(timer, e.target.value)}
+                                min="0"
+                                step="1"
+                            />
+                        </div>
+                    ))}
+                </div>
+                
                 <div className="col-span-2 flex justify-center mt-6">
                     <button
                         type="submit"
@@ -1890,7 +1921,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const updatedPlayers = currentLeague.players.map(p =>
                 p.id === player.id ? { ...p, status: 'available' } : p
             );
-            const intermissionDuration = 30;
+            const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
             const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
             await updateLeagueInFirestore({
@@ -2154,7 +2185,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const randomPlayerIndex = getRandomAvailablePlayerIndex(currentLeague.players);
 
             if (randomPlayerIndex !== null) {
-                const bidDuration = 20;
+                const bidDuration = currentLeague.rosterSettings?.bidDuration || 20;
                 const bidEndTime = new Date(Date.now() + bidDuration * 1000);
 
                 await updateLeagueInFirestore({
@@ -2185,7 +2216,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             return;
         }
 
-        const bidDuration = 20;
+        const bidDuration = currentLeague.rosterSettings?.bidDuration || 20;
         const bidEndTime = new Date(Date.now() + bidDuration * 1000);
 
         await updateLeagueInFirestore({
@@ -2339,7 +2370,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
                 );
             }
 
-            const intermissionDuration = 30;
+            const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
             const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
             await updateLeagueInFirestore({
@@ -2389,7 +2420,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             return team;
         });
 
-        const intermissionDuration = 30;
+        const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
         const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
         await updateLeagueInFirestore({
