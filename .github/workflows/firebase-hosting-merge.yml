@@ -15,7 +15,8 @@ jobs:
       - run: npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HOOD_AUCTION_DRAFT___DRAFT }}
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_HOOD_AUCTION_DRAFT___DRAFT }}'
           channelId: live
           projectId: hood-auction-draft---draft
+          entryPoint: ./build # Add this linet
