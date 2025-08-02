@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public data for shared access (leagues, players)
+    match /artifacts/{appId}/public/data/{collection=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Private user data (if you were to add user-specific settings)
+    match /artifacts/{appId}/users/{userId}/{documents=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
