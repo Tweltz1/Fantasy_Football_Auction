@@ -1939,7 +1939,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const winningTeamId = sortedBids[0].bidderId;
             await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentBids);
         }
-    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount, REBID_DURATION]);
+    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount]);
  
 
     const handleAutoNominateNextPlayer = useCallback(async () => {
