@@ -25,7 +25,7 @@ import {
 
 /* global __app_id */
 
-const APP_VERSION = "v1.1.0"; // Or any version number you like
+const APP_VERSION = process.env.REACT_APP_VERSION || "local";
 
 // Define context for Firebase and Auth
 const FirebaseContext = createContext(null);
@@ -1827,7 +1827,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 		await updateLeagueInFirestore({ teams: updatedTeams });
 
 		setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
-	}, [currentLeague.teams, userId, updateLeagueInFirestore]);
+	}, [currentLeague.teams, userId, updateLeagueInFirestore, setPlayersToAssign]); // Add setPlayersToAssign here
 
     const handleRebidEnd = useCallback(async () => {
         if (currentLeague.status !== 'rebidding' || currentLeague.isPaused) return;
