@@ -1784,7 +1784,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             rebidInfo: null,
         });
         setBidAmount(0);
-    }, [currentLeague.players, currentLeague.teams, updateLeagueInFirestore]);
+    }, [currentLeague.players, currentLeague.teams, updateLeagueInFirestore, currentLeague.rosterSettings]);
 
     const handleConfirmAssignment = async (playerId, assignedSpot) => {
         const team = currentLeague.teams.find(t => t.id === userId);
