@@ -1735,7 +1735,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 		setMessageModalContent("Team budget updated successfully!");
 	};
 	
-	const awardPlayerAndContinue = async (player, winningTeamId, price, allBids) => {
+	const awardPlayerAndContinue = useCallback(async (player, winningTeamId, price, allBids) => {
         const updatedPlayers = currentLeague.players.map(p =>
             p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
         );
