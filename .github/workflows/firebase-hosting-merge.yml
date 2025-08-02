@@ -19,4 +19,3 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_HOOD_AUCTION_DRAFT___DRAFT }}'
           channelId: live
           projectId: hood-auction-draft---draft
-          entryPoint: ./build # Add this linet
