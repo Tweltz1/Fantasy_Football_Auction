@@ -1794,7 +1794,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 			setPlayerToAssign(player);
 		}
 		
-	}, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount, userId, playerToAssign]);
+	}, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount, userId]);
 
     const handleConfirmAssignment = async (playerId, assignedSpot) => {
         const team = currentLeague.teams.find(t => t.id === userId);
