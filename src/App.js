@@ -2212,22 +2212,24 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         });
 
         const currentRosterSize = currentTeam.roster.length;
-        const totalRosterSpotsConfigured = Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
+		const totalRosterSpotsConfigured = Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
 
-        const remainingRosterSpots = totalRosterSpotsConfigured - currentRosterSize;
+		const remainingRosterSpots = totalRosterSpotsConfigured - currentRosterSize;
 
-        const minimumBudgetRequiredForRemainingSpots = Math.max(0, remainingRosterSpots - 1);
-        const maxBidAllowed = currentTeam.budget - minimumBudgetRequiredForRemainingSpots;
+		// Correct logic for maximum allowed bid
+		const minimumBudgetRequiredForRemainingSpots = Math.max(0, remainingRosterSpots - 1);
+		const maxBidAllowed = currentTeam.budget - minimumBudgetRequiredForRemainingSpots;
 
-        if (bidValue > maxBidAllowed) {
-            setMessageModalContent(`Your bid of $${bidValue} is too high. You must reserve at least $1 for each of your remaining ${remainingRosterSpots} roster spots. Your maximum allowed bid for this player is $${maxBidAllowed}.`);
-            return;
-        }
+		if (bidValue > maxBidAllowed) {
+			setMessageModalContent(`Your bid of $${bidValue} is too high. You must reserve at least $1 for each of your remaining ${remainingRosterSpots} roster spots. Your maximum allowed bid for this player is $${maxBidAllowed}.`);
+			return;
+		}
 
-        if (bidValue > currentTeam.budget) {
-            setMessageModalContent("You do not have enough budget for this bid.");
-            return;
-        }
+		if (bidValue > currentTeam.budget) {
+			setMessageModalContent("You do not have enough budget for this bid.");
+			return;
+		}
+
 
         const newActivePlayerBids = {
             ...(currentLeague.activePlayerBids || {}),
@@ -2839,7 +2841,9 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 												const remainingRosterSpotsForCalc = TOTAL_REQUIRED_ROSTER_SLOTS - userTeam.roster.length;
 												const maxBid = userTeam.budget - Math.max(0, remainingRosterSpotsForCalc - 1);
 												return (
-													<p>Your Max Bid for this player: <span className="font-bold">${maxBid}</span></p>
+													<p className="text-sm text-gray-600">
+														Max Bid for Next Player: <span className="font-semibold">${maxBid}</span> <span className="text-gray-500">(to fill all spots)</span>
+													</p>
 												);
 											})()}
 										</div>
