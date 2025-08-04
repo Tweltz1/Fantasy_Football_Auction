@@ -2,8 +2,6 @@ import React, { useState, useEffect, createContext, useContext, useRef, useCallb
 import { initializeApp } from 'firebase/app';
 import {
     getAuth,
-    signInAnonymously,
-    signInWithCustomToken,
     onAuthStateChanged,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -24,7 +22,7 @@ import {
     getDoc // Import getDoc for global favorites check
 } from 'firebase/firestore';
 
-/* global __initial_auth_token, __app_id */
+ //global __initial_auth_token, __app_id 
 
 // Define context for Firebase and Auth
 const FirebaseContext = createContext(null);
@@ -1835,7 +1833,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const winningTeamId = sortedRebids[0].bidderId;
             await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentRebids);
         }
-    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount]);
+    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount,awardPlayerAndContinue]);
 
 
     const handleBidEnd = useCallback(async () => {
@@ -1901,7 +1899,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         } else {
             const winningBid = sortedBids[0].amount;
             const winningTeamId = sortedBids[0].bidderId;
-            await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentBids);
+            await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentBids,awardPlayerAndContinue);
         }
     }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount, REBID_DURATION]);
 
@@ -3455,7 +3453,7 @@ const App = () => {
             });
             return () => unsubscribe();
         }
-    }, [selectedLeague?.id, db, isAuthReady, appId, currentView]); // NEW: Add currentView to the dependency array
+    }, [selectedLeague?.id, db, isAuthReady, appId, currentView,selectedLeague]); // NEW: Add currentView to the dependency array
 
     const handleNavigate = (view) => {
         setCurrentView(view);
