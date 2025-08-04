@@ -318,7 +318,7 @@ const FirebaseProvider = ({ children }) => {
     const [currentUserEmail, setCurrentUserEmail] = useState(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [globalFavorites, setGlobalFavorites] = useState([]); // New state for global favorites
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const appId = 'default-app-id';
 
     useEffect(() => {
         try {
@@ -604,7 +604,7 @@ const LeagueList = ({ onSelectLeague, userId, onEditRosterSettings, onEditTeamPr
 
         setLoading(true);
         setError(null);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const appId = 'default-app-id';
 
         const publicLeaguesRef = collection(db, `artifacts/${appId}/public/data/leagues`);
         const q = query(publicLeaguesRef);
@@ -735,7 +735,7 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
     const [teamToEdit, setTeamToEdit] = useState(null);
     const [message, setMessage] = useState('');
     const [messageModalContent, setMessageModalContent] = useState(null);
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const appId = 'default-app-id';
 
     // Default roster settings for new leagues
     const DEFAULT_ROSTER_SETTINGS = {
@@ -1696,7 +1696,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     useEffect(() => {
         leagueRef.current = currentLeague;
     }, [currentLeague])
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const appId = 'default-app-id';
 
     const isLeagueAdmin = currentLeague.adminId === userId;
 
@@ -3301,7 +3301,7 @@ const LeagueDetailsScreen = ({ league, userId, onBackToLeagues, onStartDraft, is
         .filter(player => sortPosition === 'All' || player.position === sortPosition)
         .sort((a, b) => a.rank - b.rank);
         
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const appId = 'default-app-id';
 	
 	// ADDED: New function for entering the draft room
     const handleEnterDraftRoom = async () => {
@@ -3707,7 +3707,7 @@ const App = () => {
     const { userId, currentUserEmail, isAuthReady, auth, db, isGlobalFavorite, toggleGlobalFavorite, MASTER_PLAYER_LIST } = useFirebase();
     const [currentView, setCurrentView] = useState('home');
     const [selectedLeague, setSelectedLeague] = useState(null);
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const appId = 'default-app-id';
 
 // Fetch updated league data if selectedLeague changes or on initial load
     useEffect(() => {
