@@ -1606,20 +1606,20 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     const [showNominatePlayerModal, setShowNominatePlayerModal] = useState(false);
     const [showManageMembersModal, setShowManageMembersModal] = useState(false);
     const [messageModalContent, setMessageModalContent] = useState(null);
-	const [searchTerm, setSearchTerm] = useState('');
-	const [showEditBudgetModal, setShowEditBudgetModal] = useState(false);
-	const [teamToEditBudget, setTeamToEditBudget] = useState(null);
-    const [sortPosition, setSortPosition] = useState('All'); // For available players list
-	const [showBeerDutyModal, setShowBeerDutyModal] = useState(false); // ADDED
-	const [setLastBeerRequest] = useState(0); // ADDED	
-    const [showAvailablePlayers, setShowAvailablePlayers] = useState(true); // New state for toggling available players
-    const [showFavoritedPlayers, setShowFavoritedPlayers] = useState(true); // New state for toggling favorited players
-    // REVISED: Renamed playersToAssign to playerToAssign and changed it from array to object/null
-    const lastProcessedPlayerId = useRef(null); // Prevents re-triggering modal for the same player
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showEditBudgetModal, setShowEditBudgetModal] = useState(false);
+    const [teamToEditBudget, setTeamToEditBudget] = useState(null);
+    const [sortPosition, setSortPosition] = useState('All');
+    const [showBeerDutyModal, setShowBeerDutyModal] = useState(false);
+    const [setLastBeerRequest] = useState(0);
+    const [showAvailablePlayers, setShowAvailablePlayers] = useState(true);
+    const [showFavoritedPlayers, setShowFavoritedPlayers] = useState(true);
+    // REMOVED: playerToAssign state is no longer needed
+    const lastProcessedPlayerId = useRef(null);
     const timerRef = useRef(null);
     const intermissionTimerRef = useRef(null);
     const rebidTimerRef = useRef(null);
-	const leagueRef = useRef(currentLeague);
+    const leagueRef = useRef(currentLeague);
     useEffect(() => {
         leagueRef.current = currentLeague;
     }, [currentLeague])
@@ -1632,8 +1632,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     };
 
     const TOTAL_REQUIRED_ROSTER_SLOTS = Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
-
-    //const REBID_DURATION = 15; 
 
     useEffect(() => {
         localStorage.setItem('quickBid1', quickBid1.toString());
@@ -1649,96 +1647,96 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         }
     }, [db, currentLeague.id, appId]);
 
+    const handleSaveBudget = async (teamId, newBudget) => {
+        const updatedTeams = currentLeague.teams.map(team =>
+            team.id === teamId ? { ...team, budget: newBudget } : team
+        );
+        await updateLeagueInFirestore({ teams: updatedTeams });
+        setShowEditBudgetModal(false);
+        setTeamToEditBudget(null);
+        setMessageModalContent("Team budget updated successfully!");
+    };
+    
+    // REFACTORED: awardPlayerAndContinue to include smart assigning logic
+    const awardPlayerAndContinue = useCallback(async (player, winningTeamId, price, allBids) => {
+        // Find the winning team and their current roster
+        const winningTeam = currentLeague.teams.find(t => t.id === winningTeamId);
+        if (!winningTeam) return;
 
-	const handleSaveBudget = async (teamId, newBudget) => {
-		const updatedTeams = currentLeague.teams.map(team => 
-			team.id === teamId ? { ...team, budget: newBudget } : team
-		);
-		await updateLeagueInFirestore({ teams: updatedTeams });
-		setShowEditBudgetModal(false);
-		setTeamToEditBudget(null);
-		setMessageModalContent("Team budget updated successfully!");
-	};
-	
-	const awardPlayerAndContinue = useCallback(async (player, winningTeamId, price, allBids) => {
-		// Find the winning team and their current roster
-		const winningTeam = currentLeague.teams.find(t => t.id === winningTeamId);
-		if (!winningTeam) return; // Should not happen, but a good safeguard
+        // Determine the best available spot for the player (new smart assigning logic)
+        let assignedSpot = 'BENCH'; // Default to bench
+        const currentAssignedCounts = winningTeam.roster.reduce((counts, rosterPlayer) => {
+            if (rosterPlayer.assignedSpot) {
+                counts[rosterPlayer.assignedSpot] = (counts[rosterPlayer.assignedSpot] || 0) + 1;
+            }
+            return counts;
+        }, {});
 
-		// Determine the best available spot for the player (new smart assigning logic)
-		let assignedSpot = 'BENCH'; // Default to bench
-		const currentAssignedCounts = winningTeam.roster.reduce((counts, rosterPlayer) => {
-			if (rosterPlayer.assignedSpot) {
-				counts[rosterPlayer.assignedSpot] = (counts[rosterPlayer.assignedSpot] || 0) + 1;
-			}
-			return counts;
-		}, {});
+        const playerPos = player.position === 'DST' ? 'DEF' : player.position;
 
-		const playerPos = player.position === 'DST' ? 'DEF' : player.position;
+        // Rule 1: Assign to primary position if available
+        if (REQUIRED_ROSTER_SPOTS[playerPos] && (currentAssignedCounts[playerPos] || 0) < REQUIRED_ROSTER_SPOTS[playerPos]) {
+            assignedSpot = playerPos;
+        }
+        // Rule 2: Assign to SUPERFLEX if eligible and available
+        else if (['QB', 'RB', 'WR', 'TE'].includes(playerPos) && REQUIRED_ROSTER_SPOTS.SUPERFLEX && (currentAssignedCounts.SUPERFLEX || 0) < REQUIRED_ROSTER_SPOTS.SUPERFLEX) {
+            assignedSpot = 'SUPERFLEX';
+        }
+        // Rule 3: Assign to FLEX if eligible and available
+        else if (['RB', 'WR', 'TE'].includes(playerPos) && REQUIRED_ROSTER_SPOTS.FLEX && (currentAssignedCounts.FLEX || 0) < REQUIRED_ROSTER_SPOTS.FLEX) {
+            assignedSpot = 'FLEX';
+        }
+        // Rule 4: If no starting spots, it's already set to 'BENCH'
 
-		// Rule 1: Assign to primary position if available
-		if (REQUIRED_ROSTER_SPOTS[playerPos] && (currentAssignedCounts[playerPos] || 0) < REQUIRED_ROSTER_SPOTS[playerPos]) {
-			assignedSpot = playerPos;
-		}
-		// Rule 2: Assign to SUPERFLEX if eligible and available
-		else if (['QB', 'RB', 'WR', 'TE'].includes(playerPos) && REQUIRED_ROSTER_SPOTS.SUPERFLEX && (currentAssignedCounts.SUPERFLEX || 0) < REQUIRED_ROSTER_SPOTS.SUPERFLEX) {
-			assignedSpot = 'SUPERFLEX';
-		}
-		// Rule 3: Assign to FLEX if eligible and available
-		else if (['RB', 'WR', 'TE'].includes(playerPos) && REQUIRED_ROSTER_SPOTS.FLEX && (currentAssignedCounts.FLEX || 0) < REQUIRED_ROSTER_SPOTS.FLEX) {
-			assignedSpot = 'FLEX';
-		}
-		// Rule 4: If no starting spots, it's already set to 'BENCH'
+        const updatedPlayers = currentLeague.players.map(p =>
+            p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
+        );
 
-		const updatedPlayers = currentLeague.players.map(p =>
-			p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
-		);
+        const updatedTeams = currentLeague.teams.map(team => {
+            if (team.id === winningTeamId) {
+                return {
+                    ...team,
+                    budget: team.budget - price,
+                    roster: [...team.roster, {
+                        playerId: player.id,
+                        price,
+                        name: player.name,
+                        position: player.position,
+                        assignedSpot: assignedSpot // The new auto-assigned spot
+                    }]
+                };
+            }
+            return team;
+        });
 
-		const updatedTeams = currentLeague.teams.map(team => {
-			if (team.id === winningTeamId) {
-				return {
-					...team,
-					budget: team.budget - price,
-					roster: [...team.roster, {
-						playerId: player.id,
-						price,
-						name: player.name,
-						position: player.position,
-						assignedSpot: assignedSpot // The new auto-assigned spot
-					}]
-				};
-			}
-			return team;
-		});
+        const newLastDraftedPlayerInfo = {
+            player: { id: player.id, name: player.name, position: player.position, team: player.team },
+            winningTeam: { id: winningTeam.id, name: winningTeam.name, profilePicture: winningTeam.profilePicture },
+            price,
+            bidHistory: allBids.map(bid => ({ ...bid, timestamp: bid.timestamp.getTime ? bid.timestamp.getTime() : bid.timestamp }))
+        };
 
-		const newLastDraftedPlayerInfo = {
-			player: { id: player.id, name: player.name, position: player.position, team: player.team },
-			winningTeam: { id: winningTeam.id, name: winningTeam.name, profilePicture: winningTeam.profilePicture },
-			price,
-			bidHistory: allBids.map(bid => ({ ...bid, timestamp: bid.timestamp.getTime ? bid.timestamp.getTime() : bid.timestamp }))
-		};
+        const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
+        const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
-		const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
-		const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
+        await updateLeagueInFirestore({
+            players: updatedPlayers,
+            teams: updatedTeams,
+            currentPlayerIndex: null,
+            currentBid: 0,
+            currentBidderId: null,
+            bidEndTime: null,
+            intermissionEndTime,
+            status: 'intermission',
+            pausedAtRemainingTime: null,
+            activePlayerBids: {},
+            lastDraftedPlayerInfo: newLastDraftedPlayerInfo,
+            tiedBids: null,
+            rebidInfo: null,
+        });
+        setBidAmount(0);
 
-		await updateLeagueInFirestore({
-			players: updatedPlayers,
-			teams: updatedTeams,
-			currentPlayerIndex: null,
-			currentBid: 0,
-			currentBidderId: null,
-			bidEndTime: null,
-			intermissionEndTime,
-			status: 'intermission',
-			pausedAtRemainingTime: null,
-			activePlayerBids: {},
-			lastDraftedPlayerInfo: newLastDraftedPlayerInfo,
-			tiedBids: null,
-			rebidInfo: null,
-		});
-		setBidAmount(0);
-
-	}, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount]);
+    }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount]);
 
     const handleConfirmAssignment = async (playerId, assignedSpot) => {
         const team = currentLeague.teams.find(t => t.id === userId);
@@ -1961,11 +1959,12 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
                 const newLastDrafted = updatedLeagueData.lastDraftedPlayerInfo;
                 if (newLastDrafted && newLastDrafted.winningTeam.id === userId && newLastDrafted.player.id !== lastProcessedPlayerId.current) {
                     lastProcessedPlayerId.current = newLastDrafted.player.id;
-                    const userTeam = updatedLeagueData.teams.find(t => t.id === userId);
-                    const rosteredPlayer = userTeam.roster.find(p => p.playerId === newLastDrafted.player.id);
-                    if (rosteredPlayer && rosteredPlayer.assignedSpot === 'UNASSIGNED') {
-                        setPlayerToAssign(newLastDrafted.player);
-                    }
+                    // REMOVED: The manual assignment modal is no longer used.
+                    // const userTeam = updatedLeagueData.teams.find(t => t.id === userId);
+                    // const rosteredPlayer = userTeam.roster.find(p => p.playerId === newLastDrafted.player.id);
+                    // if (rosteredPlayer && rosteredPlayer.assignedSpot === 'UNASSIGNED') {
+                    //     setPlayerToAssign(newLastDrafted.player);
+                    // }
                 }
             } else {
                 onBackToLeagueDetails();
@@ -3226,20 +3225,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				<NotificationModal
 					message={messageModalContent}
 					onClose={() => setMessageModalContent(null)}
-				/>
-			)}
-			
-			{/* REVISED: This is the new, dedicated modal rendering logic */}
-			{playerToAssign && userTeam && (
-				<AssignPlayerModal
-					player={playerToAssign}
-					team={userTeam}
-					rosterSettings={REQUIRED_ROSTER_SPOTS}
-					onClose={() => setPlayerToAssign(null)}
-					onAssign={async (playerId, spot) => {
-						await handleConfirmAssignment(playerId, spot);
-						setPlayerToAssign(null);
-					}}
 				/>
 			)}
 		</div>
