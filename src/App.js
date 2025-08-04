@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
 import { initializeApp } from 'firebase/app';
 import {
@@ -254,58 +253,58 @@ const MASTER_PLAYER_LIST = [
     { id: 'p224', name: 'Jaleel McLaughlin', position: 'RB', team: 'DEN', rank: 224, image: 'https://placehold.co/100x100/0000CD/FFFFFF?text=JM', status: 'available' },
     { id: 'p225', name: 'Kendre Miller', position: 'RB', team: 'NO', rank: 225, image: 'https://placehold.co/100x100/4169E1/FFFFFF?text=KM', status: 'available' },
     { id: 'p226', name: 'Calvin Austin III', position: 'WR', team: 'PIT', rank: 226, image: 'https://placehold.co/100x100/1E90FF/FFFFFF?text=CA', status: 'available' },
-    { id: 'p227', name: 'Elic Ayomanor', position: 'WR', team: 'TEN', rank: 227, image: 'https://placehold.co/100x100/00BFFF/FFFFFF?text=EA', status: 'available' },
-    { id: 'p228', name: 'Tyler Lockett', position: 'WR', team: 'TEN', rank: 228, image: 'https://placehold.co/100x100/ADD8E6/000000?text=TL', status: 'available' },
-    { id: 'p229', name: 'Anthony Richardson Sr.', position: 'QB', team: 'IND', rank: 229, image: 'https://placehold.co/100x100/B0E0E6/000000?text=AR', status: 'available' },
-    { id: 'p230', name: 'San Francisco 49ers', position: 'DST', team: 'SF', rank: 230, image: 'https://placehold.co/100x100/87CEFA/FFFFFF?text=SF', status: 'available' },
-    { id: 'p231', name: 'Jason Sanders', position: 'K', team: 'MIA', rank: 231, image: 'https://placehold.co/100x100/87CEEB/FFFFFF?text=JS', status: 'available' },
-    { id: 'p232', name: 'Younghoe Koo', position: 'K', team: 'ATL', rank: 232, image: 'https://placehold.co/100x100/6495ED/FFFFFF?text=YK', status: 'available' },
-    { id: 'p233', name: 'Devin Neal', position: 'RB', team: 'NO', rank: 233, image: 'https://placehold.co/100x100/B0C4DE/000000?text=DN', status: 'available' },
-    { id: 'p234', name: 'Russell Wilson', position: 'QB', team: 'NYG', rank: 234, image: 'https://placehold.co/100x100/778899/FFFFFF?text=RW', status: 'available' },
-    { id: 'p235', name: 'Keenan Allen', position: 'WR', team: 'FA', rank: 235, image: 'https://placehold.co/100x100/708090/FFFFFF?text=KA', status: 'available' },
-    { id: 'p236', name: 'Ja\'Tavion Sanders', position: 'TE', team: 'CAR', rank: 236, image: 'https://placehold.co/100x100/696969/FFFFFF?text=JS', status: 'available' },
-    { id: 'p237', name: 'Brandin Cooks', position: 'WR', team: 'NO', rank: 237, image: 'https://placehold.co/100x100/F0F8FF/000000?text=BC', status: 'available' },
-    { id: 'p238', name: 'Miles Sanders', position: 'RB', team: 'DAL', rank: 238, image: 'https://placehold.co/100x100/F5F5F5/000000?text=MS', status: 'available' },
-    { id: 'p239', name: 'Jalen Tolbert', position: 'WR', team: 'DAL', rank: 239, image: 'https://placehold.co/100x100/DCDCDC/000000?text=JT', status: 'available' },
-    { id: 'p240', name: 'Cole Kmet', position: 'TE', team: 'CHI', rank: 240, image: 'https://placehold.co/100x100/D3D3D3/000000?text=CK', status: 'available' },
-    { id: 'p241', name: 'Pat Bryant', position: 'WR', team: 'DEN', rank: 241, image: 'https://placehold.co/100x100/A9A9A9/FFFFFF?text=PB', status: 'available' },
-    { id: 'p242', name: 'Juwan Johnson', position: 'TE', team: 'NO', rank: 242, image: 'https://placehold.co/100x100/C0C0C0/000000?text=JJ', status: 'available' },
-    { id: 'p243', name: 'Kyle Monangai', position: 'RB', team: 'CHI', rank: 243, image: 'https://placehold.co/100x100/E6E6FA/000000?text=KM', status: 'available' },
-    { id: 'p244', name: 'Dallas Cowboys', position: 'DST', team: 'DAL', rank: 244, image: 'https://placehold.co/100x100/D8BFD8/000000?text=DC', status: 'available' },
-    { id: 'p245', name: 'Audric Estime', position: 'RB', team: 'DEN', rank: 245, image: 'https://placehold.co/100x100/FF6347/FFFFFF?text=AE', status: 'available' },
-    { id: 'p246', name: 'Raheem Mostert', position: 'RB', team: 'LV', rank: 246, image: 'https://placehold.co/100x100/FF4500/FFFFFF?text=RM', status: 'available' },
-    { id: 'p247', name: 'Elijah Moore', position: 'WR', team: 'BUF', rank: 247, image: 'https://placehold.co/100x100/FF0000/FFFFFF?text=EM', status: 'available' },
-    { id: 'p248', name: 'Elijah Mitchell', position: 'RB', team: 'KC', rank: 248, image: 'https://placehold.co/100x100/DC143C/FFFFFF?text=EM', status: 'available' },
-    { id: 'p249', name: 'Will Shipley', position: 'RB', team: 'PHI', rank: 249, image: 'https://placehold.co/100x100/B22222/FFFFFF?text=WS', status: 'available' },
-    { id: 'p250', name: 'Nick Westbrook-Ikhine', position: 'WR', team: 'MIA', rank: 250, image: 'https://placehold.co/100x100/A52A2A/FFFFFF?text=NW', status: 'available' },
+    { id: 'p227', name: 'Elic Ayomanor', position: 'WR', team: 'TEN', rank: 227, image: 'https://placehold.co/100x100/ADD8E6/000000?text=EA', status: 'available' },
+    { id: 'p228', name: 'Tyler Lockett', position: 'WR', team: 'TEN', rank: 228, image: 'https://placehold.co/100x100/B0E0E6/000000?text=TL', status: 'available' },
+    { id: 'p229', name: 'Anthony Richardson Sr.', position: 'QB', team: 'IND', rank: 229, image: 'https://placehold.co/100x100/87CEFA/FFFFFF?text=AR', status: 'available' },
+    { id: 'p230', name: 'San Francisco 49ers', position: 'DST', team: 'SF', rank: 230, image: 'https://placehold.co/100x100/87CEEB/FFFFFF?text=SF', status: 'available' },
+    { id: 'p231', name: 'Jason Sanders', position: 'K', team: 'MIA', rank: 231, image: 'https://placehold.co/100x100/6495ED/FFFFFF?text=JS', status: 'available' },
+    { id: 'p232', name: 'Younghoe Koo', position: 'K', team: 'ATL', rank: 232, image: 'https://placehold.co/100x100/B0C4DE/000000?text=YK', status: 'available' },
+    { id: 'p233', name: 'Devin Neal', position: 'RB', team: 'NO', rank: 233, image: 'https://placehold.co/100x100/778899/FFFFFF?text=DN', status: 'available' },
+    { id: 'p234', name: 'Russell Wilson', position: 'QB', team: 'NYG', rank: 234, image: 'https://placehold.co/100x100/708090/FFFFFF?text=RW', status: 'available' },
+    { id: 'p235', name: 'Keenan Allen', position: 'WR', team: 'FA', rank: 235, image: 'https://placehold.co/100x100/696969/FFFFFF?text=KA', status: 'available' },
+    { id: 'p236', name: 'Ja\'Tavion Sanders', position: 'TE', team: 'CAR', rank: 236, image: 'https://placehold.co/100x100/F0F8FF/000000?text=JS', status: 'available' },
+    { id: 'p237', name: 'Brandin Cooks', position: 'WR', team: 'NO', rank: 237, image: 'https://placehold.co/100x100/F5F5F5/000000?text=BC', status: 'available' },
+    { id: 'p238', name: 'Miles Sanders', position: 'RB', team: 'DAL', rank: 238, image: 'https://placehold.co/100x100/DCDCDC/000000?text=MS', status: 'available' },
+    { id: 'p239', name: 'Jalen Tolbert', position: 'WR', team: 'DAL', rank: 239, image: 'https://placehold.co/100x100/D3D3D3/000000?text=JT', status: 'available' },
+    { id: 'p240', name: 'Cole Kmet', position: 'TE', team: 'CHI', rank: 240, image: 'https://placehold.co/100x100/A9A9A9/FFFFFF?text=CK', status: 'available' },
+    { id: 'p241', name: 'Pat Bryant', position: 'WR', team: 'DEN', rank: 241, image: 'https://placehold.co/100x100/C0C0C0/000000?text=PB', status: 'available' },
+    { id: 'p242', name: 'Juwan Johnson', position: 'TE', team: 'NO', rank: 242, image: 'https://placehold.co/100x100/E6E6FA/000000?text=JJ', status: 'available' },
+    { id: 'p243', name: 'Kyle Monangai', position: 'RB', team: 'CHI', rank: 243, image: 'https://placehold.co/100x100/D8BFD8/000000?text=KM', status: 'available' },
+    { id: 'p244', name: 'Dallas Cowboys', position: 'DST', team: 'DAL', rank: 244, image: 'https://placehold.co/100x100/FF6347/FFFFFF?text=DC', status: 'available' },
+    { id: 'p245', name: 'Audric Estime', position: 'RB', team: 'DEN', rank: 245, image: 'https://placehold.co/100x100/FF4500/FFFFFF?text=AE', status: 'available' },
+    { id: 'p246', name: 'Raheem Mostert', position: 'RB', team: 'LV', rank: 246, image: 'https://placehold.co/100x100/FF0000/FFFFFF?text=RM', status: 'available' },
+    { id: 'p247', name: 'Elijah Moore', position: 'WR', team: 'BUF', rank: 247, image: 'https://placehold.co/100x100/DC143C/FFFFFF?text=EM', status: 'available' },
+    { id: 'p248', name: 'Elijah Mitchell', position: 'RB', team: 'KC', rank: 248, image: 'https://placehold.co/100x100/B22222/FFFFFF?text=EM', status: 'available' },
+    { id: 'p249', name: 'Will Shipley', position: 'RB', team: 'PHI', rank: 249, image: 'https://placehold.co/100x100/A52A2A/FFFFFF?text=WS', status: 'available' },
+    { id: 'p250', name: 'Nick Westbrook-Ikhine', position: 'WR', team: 'MIA', rank: 250, image: 'https://placehold.co/100x100/8B0000/FFFFFF?text=NW', status: 'available' },
     // --- Defenses ---
-    { id: 'p251', name: 'Tampa Bay Buccaneers', position: 'DST', team: 'TB', rank: 251, image: 'https://placehold.co/100x100/708090/FFFFFF?text=TB', status: 'available' },
-    { id: 'p252', name: 'Chicago Bears', position: 'DST', team: 'CHI', rank: 252, image: 'https://placehold.co/100x100/778899/FFFFFF?text=CB', status: 'available' },
-    { id: 'p253', name: 'New England Patriots', position: 'DST', team: 'NE', rank: 253, image: 'https://placehold.co/100x100/696969/FFFFFF?text=NE', status: 'available' },
-    { id: 'p254', name: 'Arizona Cardinals', position: 'DST', team: 'ARI', rank: 254, image: 'https://placehold.co/100x100/2F4F4F/FFFFFF?text=AC', status: 'available' },
-    { id: 'p255', name: 'Cleveland Browns', position: 'DST', team: 'CLE', rank: 255, image: 'https://placehold.co/100x100/008B8B/FFFFFF?text=CB', status: 'available' },
-    { id: 'p256', name: 'New York Giants', position: 'DST', team: 'NYG', rank: 256, image: 'https://placehold.co/100x100/483D8B/FFFFFF?text=NY', status: 'available' },
-    { id: 'p257', name: 'Miami Dolphins', position: 'DST', team: 'MIA', rank: 257, image: 'https://placehold.co/100x100/2F4F4F/FFFFFF?text=MD', status: 'available' },
-    { id: 'p258', name: 'Washington Commanders', position: 'DST', team: 'WAS', rank: 258, image: 'https://placehold.co/100x100/00CED1/FFFFFF?text=WC', status: 'available' },
-    { id: 'p259', name: 'Atlanta Falcons', position: 'DST', team: 'ATL', rank: 259, image: 'https://placehold.co/100x100/1E90FF/FFFFFF?text=AF', status: 'available' },
-    { id: 'p260', name: 'Cincinnati Bengals', position: 'DST', team: 'CIN', rank: 260, image: 'https://placehold.co/100x100/B0C4DE/FFFFFF?text=CB', status: 'available' },
-    { id: 'p261', name: 'Indianapolis Colts', position: 'DST', team: 'IND', rank: 261, image: 'https://placehold.co/100x100/ADD8E6/000000?text=IC', status: 'available' },
-    { id: 'p262', name: 'New Orleans Saints', position: 'DST', team: 'NO', rank: 262, image: 'https://placehold.co/100x100/B0E0E6/000000?text=NO', status: 'available' },
-    { id: 'p263', name: 'Las Vegas Raiders', position: 'DST', team: 'LV', rank: 263, image: 'https://placehold.co/100x100/87CEFA/FFFFFF?text=LV', status: 'available' },
-    { id: 'p264', name: 'Jacksonville Jaguars', position: 'DST', team: 'JAC', rank: 264, image: 'https://placehold.co/100x100/87CEEB/FFFFFF?text=JJ', status: 'available' },
-    { id: 'p265', name: 'Tennessee Titans', position: 'DST', team: 'TEN', rank: 265, image: 'https://placehold.co/100x100/6495ED/FFFFFF?text=TT', status: 'available' },
-    { id: 'p266', name: 'Carolina Panthers', position: 'DST', team: 'CAR', rank: 266, image: 'https://placehold.co/100x100/B0C4DE/000000?text=CP', status: 'available' },
+    { id: 'p251', name: 'Tampa Bay Buccaneers', position: 'DST', team: 'TB', rank: 251, image: 'https://placehold.co/100x100/FFFFFF/000000?text=TB', status: 'available' },
+    { id: 'p252', name: 'Chicago Bears', position: 'DST', team: 'CHI', rank: 252, image: 'https://placehold.co/100x100/8A2BE2/FFFFFF?text=CB', status: 'available' },
+    { id: 'p253', name: 'New England Patriots', position: 'DST', team: 'NE', rank: 253, image: 'https://placehold.co/100x100/9932CC/FFFFFF?text=NE', status: 'available' },
+    { id: 'p254', name: 'Arizona Cardinals', position: 'DST', team: 'ARI', rank: 254, image: 'https://placehold.co/100x100/9400D3/FFFFFF?text=AC', status: 'available' },
+    { id: 'p255', name: 'Cleveland Browns', position: 'DST', team: 'CLE', rank: 255, image: 'https://placehold.co/100x100/8B008B/FFFFFF?text=CB', status: 'available' },
+    { id: 'p256', name: 'New York Giants', position: 'DST', team: 'NYG', rank: 256, image: 'https://placehold.co/100x100/800080/FFFFFF?text=NY', status: 'available' },
+    { id: 'p257', name: 'Miami Dolphins', position: 'DST', team: 'MIA', rank: 257, image: 'https://placehold.co/100x100/663399/FFFFFF?text=MD', status: 'available' },
+    { id: 'p258', name: 'Washington Commanders', position: 'DST', team: 'WAS', rank: 258, image: 'https://placehold.co/100x100/483D8B/FFFFFF?text=WC', status: 'available' },
+    { id: 'p259', name: 'Atlanta Falcons', position: 'DST', team: 'ATL', rank: 259, image: 'https://placehold.co/100x100/191970/FFFFFF?text=AF', status: 'available' },
+    { id: 'p260', name: 'Cincinnati Bengals', position: 'DST', team: 'CIN', rank: 260, image: 'https://placehold.co/100x100/000080/FFFFFF?text=CB', status: 'available' },
+    { id: 'p261', name: 'Indianapolis Colts', position: 'DST', team: 'IND', rank: 261, image: 'https://placehold.co/100x100/00008B/FFFFFF?text=IC', status: 'available' },
+    { id: 'p262', name: 'New Orleans Saints', position: 'DST', team: 'NO', rank: 262, image: 'https://placehold.co/100x100/0000CD/FFFFFF?text=NO', status: 'available' },
+    { id: 'p263', name: 'Las Vegas Raiders', position: 'DST', team: 'LV', rank: 263, image: 'https://placehold.co/100x100/4169E1/FFFFFF?text=LV', status: 'available' },
+    { id: 'p264', name: 'Jacksonville Jaguars', position: 'DST', team: 'JAC', rank: 264, image: 'https://placehold.co/100x100/1E90FF/FFFFFF?text=JJ', status: 'available' },
+    { id: 'p265', name: 'Tennessee Titans', position: 'DST', team: 'TEN', rank: 265, image: 'https://placehold.co/100x100/00BFFF/FFFFFF?text=TT', status: 'available' },
+    { id: 'p266', name: 'Carolina Panthers', position: 'DST', team: 'CAR', rank: 266, image: 'https://placehold.co/100x100/87CEFA/FFFFFF?text=CP', status: 'available' },
     // --- Kickers ---
-    { id: 'p267', name: 'Tyler Loop', position: 'K', team: 'BAL', rank: 267, image: 'https://placehold.co/100x100/F0F8FF/000000?text=TL', status: 'available' },
-    { id: 'p268', name: 'Cam Little', position: 'K', team: 'JAC', rank: 268, image: 'https://placehold.co/100x100/FAEBD7/000000?text=CL', status: 'available' },
-    { id: 'p269', name: 'Cairo Santos', position: 'K', team: 'CHI', rank: 269, image: 'https://placehold.co/100x100/FFE4C4/000000?text=CS', status: 'available' },
-    { id: 'p270', name: 'Jake Moody', position: 'K', team: 'SF', rank: 270, image: 'https://placehold.co/100x100/DEB887/000000?text=JM', status: 'available' },
-    { id: 'p271', name: 'Brandon McManus', position: 'K', team: 'GB', rank: 271, image: 'https://placehold.co/100x100/5F9EA0/FFFFFF?text=BM', status: 'available' },
-    { id: 'p272', name: 'Blake Grupe', position: 'K', team: 'NO', rank: 272, image: 'https://placehold.co/100x100/7FFF00/000000?text=BG', status: 'available' },
-    { id: 'p273', name: 'Graham Gano', position: 'K', team: 'NYG', rank: 273, image: 'https://placehold.co/100x100/D2691E/FFFFFF?text=GG', status: 'available' },
-    { id: 'p274', name: 'Chad Ryland', position: 'K', team: 'ARI', rank: 274, image: 'https://placehold.co/100x100/FF7F50/FFFFFF?text=CR', status: 'available' },
-    { id: 'p275', name: 'Andy Borregales', position: 'K', team: 'NE', rank: 275, image: 'https://placehold.co/100x100/6495ED/FFFFFF?text=AB', status: 'available' },
-    { id: 'p276', name: 'Justin Tucker', position: 'K', team: 'FA', rank: 276, image: 'https://placehold.co/100x100/DC143C/FFFFFF?text=JT', status: 'available' },
+    { id: 'p267', name: 'Tyler Loop', position: 'K', team: 'BAL', rank: 267, image: 'https://placehold.co/100x100/87CEEB/FFFFFF?text=TL', status: 'available' },
+    { id: 'p268', name: 'Cam Little', position: 'K', team: 'JAC', rank: 268, image: 'https://placehold.co/100x100/6495ED/FFFFFF?text=CL', status: 'available' },
+    { id: 'p269', name: 'Cairo Santos', position: 'K', team: 'CHI', rank: 269, image: 'https://placehold.co/100x100/B0C4DE/000000?text=CS', status: 'available' },
+    { id: 'p270', name: 'Jake Moody', position: 'K', team: 'SF', rank: 270, image: 'https://placehold.co/100x100/ADD8E6/000000?text=JM', status: 'available' },
+    { id: 'p271', name: 'Brandon McManus', position: 'K', team: 'GB', rank: 271, image: 'https://placehold.co/100x100/B0E0E6/000000?text=BM', status: 'available' },
+    { id: 'p272', name: 'Blake Grupe', position: 'K', team: 'NO', rank: 272, image: 'https://placehold.co/100x100/FFFAF0/000000?text=BG', status: 'available' },
+    { id: 'p273', name: 'Graham Gano', position: 'K', team: 'NYG', rank: 273, image: 'https://placehold.co/100x100/F0FFF0/000000?text=GG', status: 'available' },
+    { id: 'p274', name: 'Chad Ryland', position: 'K', team: 'ARI', rank: 274, image: 'https://placehold.co/100x100/F5FFFA/000000?text=CR', status: 'available' },
+    { id: 'p275', name: 'Andy Borregales', position: 'K', team: 'NE', rank: 275, image: 'https://placehold.co/100x100/F0FFFF/000000?text=AB', status: 'available' },
+    { id: 'p276', name: 'Justin Tucker', position: 'K', team: 'FA', rank: 276, image: 'https://placehold.co/100x100/F5F5F5/000000?text=JT', status: 'available' },
 ];
 
 
@@ -1636,10 +1635,11 @@ const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) 
     };
 
     const availableSpots = getAvailableSpots();
-	
-	const handleAssignAndClose = (playerId, spot) => {
-        onAssign(playerId, spot);
-        onClose(); // Explicitly call the onClose function to close the modal
+
+    // NEW: Add a combined handler for assignment and closure
+    const handleAssignAndClose = (playerId, spot) => {
+        onAssign(playerId, spot); // Call the parent's assignment function
+        onClose(); // Explicitly close the modal
     };
 
     return (
@@ -1652,7 +1652,7 @@ const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) 
                     {availableSpots.length > 0 ? availableSpots.map(spot => (
                         <button
                             key={spot}
-                            onClick={() => handleAssignAndClose(player.id, spot)} // Use the new handler
+                            onClick={() => handleAssignAndClose(player.id, spot)} // Use the new combined handler
                             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition-colors duration-200 shadow-md text-lg"
                         >
                             {spot}
@@ -1662,7 +1662,7 @@ const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) 
                     )}
                 </div>
                  <button
-                    onClick={() => handleAssignAndClose(player.id, 'BENCH')} // Use the new handler
+                    onClick={() => handleAssignAndClose(player.id, 'BENCH')} // Use the new combined handler
                     className="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md"
                 >
                     Assign to Bench
@@ -1692,7 +1692,8 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 	const [setLastBeerRequest] = useState(0); // ADDED	
     const [showAvailablePlayers, setShowAvailablePlayers] = useState(true); // New state for toggling available players
     const [showFavoritedPlayers, setShowFavoritedPlayers] = useState(true); // New state for toggling favorited players
-    const [playersToAssign, setPlayersToAssign] = useState([]);
+    // REVISED: Renamed playersToAssign to playerToAssign and changed it from array to object/null
+    const [playerToAssign, setPlayerToAssign] = useState(null);
     const lastProcessedPlayerId = useRef(null); // Prevents re-triggering modal for the same player
     const timerRef = useRef(null);
     const intermissionTimerRef = useRef(null);
@@ -1787,7 +1788,13 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 			rebidInfo: null,
 		});
 		setBidAmount(0);
-	}, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount]);
+
+		// REVISED: Explicitly check if the user won and set the state to open the modal.
+		if (winningTeamId === userId) {
+			setPlayerToAssign(player);
+		}
+		
+	}, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount, userId, playerToAssign]);
 
     const handleConfirmAssignment = async (playerId, assignedSpot) => {
         const team = currentLeague.teams.find(t => t.id === userId);
@@ -1803,7 +1810,8 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         
         await updateLeagueInFirestore({ teams: updatedTeams });
 
-        setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
+        // REVISED: This line is now removed. The modal state is managed by the parent via the onClose prop.
+        // setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
     };
 
     const handleRebidEnd = useCallback(async () => {
@@ -2005,14 +2013,14 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 					const updatedLeagueData = { id: docSnapshot.id, ...docSnapshot.data() };
 					setCurrentLeague(updatedLeagueData);
 
-					// Logic to trigger the assignment modal for the winning user
+					// REVISED: This logic now uses the dedicated state variables for the modal.
 					const newLastDrafted = updatedLeagueData.lastDraftedPlayerInfo;
 					if (newLastDrafted && newLastDrafted.winningTeam.id === userId && newLastDrafted.player.id !== lastProcessedPlayerId.current) {
 						lastProcessedPlayerId.current = newLastDrafted.player.id;
 						const userTeam = updatedLeagueData.teams.find(t => t.id === userId);
 						const rosteredPlayer = userTeam.roster.find(p => p.playerId === newLastDrafted.player.id);
 						if (rosteredPlayer && rosteredPlayer.assignedSpot === 'UNASSIGNED') {
-							setPlayersToAssign(prev => [...prev, newLastDrafted.player]);
+							setPlayerToAssign(newLastDrafted.player);
 						}
 					}
 				} else {
@@ -2099,7 +2107,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             clearInterval(rebidTimerRef.current);
         }
     }, [currentLeague.status, currentLeague.isPaused, currentLeague.rebidInfo?.rebidEndTime, handleRebidEnd]);
-
 
     useEffect(() => {
         if (currentLeague.currentPlayerIndex !== null) {
@@ -3032,7 +3039,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 						});
 						const filledSpots = { ...assignedCounts };
 						const remainingRosterSpots = TOTAL_REQUIRED_ROSTER_SLOTS - team.roster.length;
-						//const budgetPerRemainingSpot = remainingRosterSpots > 0 ? (team.budget / remainingRosterSpots).toFixed(2) : 0;
 						const maxBidForThisPlayer = team.budget - Math.max(0, remainingRosterSpots - 1);
 						return (
 							<li key={team.id} className="bg-white p-3 rounded-md shadow-sm border border-gray-200">
@@ -3063,7 +3069,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 										<p className="text-sm text-gray-600 font-semibold">Total Spent: ${totalSpent}</p>
 										{remainingRosterSpots > 0 && (
 											<p className="text-sm text-gray-600">
-												{/* * FIX for Bug 2: Changed display to be more useful for the user.
+												{/* FIX for Bug 2: Changed display to be more useful for the user.
 												 * The original text was "Avg. Budget Left per Player" but the number
 												 * was often incorrect for bidding strategy. This new display shows
 												 * the maximum a player can bid while still reserving $1 for each
@@ -3208,7 +3214,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 			{currentLeague.status === 'completed' && (
 				<div className="text-center p-8 bg-green-50 rounded-lg shadow-md mt-6">
 					<h3 className="text-3xl font-bold text-green-700 mb-4">Draft Completed!</h3>
-					<p className="text-lg text-gray-700">All players have been drafted.</p>
 					<button
                         onClick={handleExportResults}
                         className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
@@ -3283,13 +3288,17 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				/>
 			)}
 			
-			{playersToAssign.length > 0 && userTeam && (
+			{/* REVISED: This is the new, dedicated modal rendering logic */}
+			{playerToAssign && userTeam && (
 				<AssignPlayerModal
-					player={playersToAssign[0]}
+					player={playerToAssign}
 					team={userTeam}
 					rosterSettings={REQUIRED_ROSTER_SPOTS}
-					onClose={() => handleConfirmAssignment(playersToAssign[0].id, 'BENCH')}
-					onAssign={handleConfirmAssignment}
+					onClose={() => setPlayerToAssign(null)}
+					onAssign={async (playerId, spot) => {
+						await handleConfirmAssignment(playerId, spot);
+						setPlayerToAssign(null);
+					}}
 				/>
 			)}
 		</div>
@@ -3405,7 +3414,7 @@ const LeagueDetailsScreen = ({ league, userId, onBackToLeagues, onStartDraft, is
                         throw new Error(`Invalid rank on row ${index + 2}. Rank must be a number.`);
                     }
 
-                    const name = data[0].trim();
+                    const name = data[0].trim
                     const position = data[1].trim().toUpperCase();
                     const team = data[2].trim().toUpperCase();
                     
