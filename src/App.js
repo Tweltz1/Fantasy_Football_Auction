@@ -1614,7 +1614,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     const [setLastBeerRequest] = useState(0);
     const [showAvailablePlayers, setShowAvailablePlayers] = useState(true);
     const [showFavoritedPlayers, setShowFavoritedPlayers] = useState(true);
-    // REMOVED: playerToAssign state is no longer needed
     const lastProcessedPlayerId = useRef(null);
     const timerRef = useRef(null);
     const intermissionTimerRef = useRef(null);
@@ -1628,14 +1627,12 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 
     const isLeagueAdmin = currentLeague.adminId === userId;
 
-    // FIX: Use useMemo to memoize the roster settings object.
     const REQUIRED_ROSTER_SPOTS = React.useMemo(() => {
         return currentLeague.rosterSettings || {
             QB: 1, RB: 2, WR: 3, TE: 1, DEF: 1, K: 1, FLEX: 1, SUPERFLEX: 1, BENCH: 6
         };
     }, [currentLeague.rosterSettings]);
     
-    // FIX: Use useMemo for the total roster slots as well.
     const TOTAL_REQUIRED_ROSTER_SLOTS = React.useMemo(() => {
         return Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
     }, [REQUIRED_ROSTER_SPOTS]);
@@ -1743,6 +1740,8 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         setBidAmount(0);
 
     }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount, REQUIRED_ROSTER_SPOTS]);
+
+
 
  
     const handleRebidEnd = useCallback(async () => {
@@ -1951,6 +1950,29 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
                 if (newLastDrafted && newLastDrafted.winningTeam.id === userId && newLastDrafted.player.id !== lastProcessedPlayerId.current) {
                     lastProcessedPlayerId.current = newLastDrafted.player.id;
                     // REMOVED: The manual assignment modal is no longer used.
+                }
+            } else {
+                onBackToLeagueDetails();
+            }
+        });
+        return () => unsubscribe();
+    }, [db, isAuthReady, currentLeague.id, onBackToLeagueDetails, appId, userId]);useEffect(() => {
+        if (!db || !isAuthReady || !currentLeague.id) return;
+
+        const leagueDocRef = doc(db, `artifacts/${appId}/public/data/leagues`, currentLeague.id);
+        const unsubscribe = onSnapshot(leagueDocRef, (docSnapshot) => {
+            if (docSnapshot.exists()) {
+                const updatedLeagueData = { id: docSnapshot.id, ...docSnapshot.data() };
+                // FIX: Use spread operator to force a new object reference, ensuring re-render.
+                setCurrentLeague({...updatedLeagueData});
+
+                // NEW: Updated log message for better debugging
+                const userTeamData = updatedLeagueData.teams.find(t => t.id === userId);
+                console.log("onSnapshot received updated league data. User's roster length:", userTeamData?.roster.length, "Budget:", userTeamData?.budget);
+
+                const newLastDrafted = updatedLeagueData.lastDraftedPlayerInfo;
+                if (newLastDrafted && newLastDrafted.winningTeam.id === userId && newLastDrafted.player.id !== lastProcessedPlayerId.current) {
+                    lastProcessedPlayerId.current = newLastDrafted.player.id;
                 }
             } else {
                 onBackToLeagueDetails();
@@ -2951,9 +2973,11 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 			)}
 
 			{/* 3. LEAGUE TEAMS LIST (MOVED) */}
-			<div className="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
+			{/* 3. LEAGUE TEAMS LIST */}
+            <div className="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
                 <h4 className="text-lg font-semibold mb-2 text-gray-800">League Teams:</h4>
                 <ul className="space-y-2">
+                    {/* FIX: Use map to create a new array of list items on each render */}
                     {currentLeague.teams.map(team => {
                         const isMyTeam = team.id === userId;
                         const totalSpent = team.roster.reduce((sum, player) => sum + (player.price || 0), 0);
@@ -2973,11 +2997,10 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
                             <li key={team.id} className="bg-white p-3 rounded-md shadow-sm border border-gray-200">
                                 <p className="font-medium text-gray-800 flex items-center">
                                     {(() => {
-                                        // Consider a user offline if their last update was more than 2 minutes ago
                                         const TWO_MINUTES_AGO = Date.now() - (2 * 60 * 1000);
                                         const lastSeenTime = team.lastSeen?.toDate ? team.lastSeen.toDate().getTime() : 0;
                                         const isConsideredOnline = team.isOnline && lastSeenTime > TWO_MINUTES_AGO;
-
+                                        
                                         return (
                                             <span
                                                 className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${isConsideredOnline ? 'bg-green-500' : 'bg-red-500'}`}
