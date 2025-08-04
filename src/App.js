@@ -1593,84 +1593,6 @@ const getRandomAvailablePlayerIndex = (players) => {
     return availablePlayerIndices[randomIndex];
 };
 
-// Add this new component to your App.js file
-const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) => {
-    const getAvailableSpots = () => {
-        if (!team || !player) return [];
-
-        // --- Calculate current roster counts from players already assigned a spot ---
-        const assignedCounts = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0, K: 0, FLEX: 0, SUPERFLEX: 0, BENCH: 0 };
-        team.roster.forEach(p => {
-            if (p.assignedSpot && p.assignedSpot !== 'UNASSIGNED' && assignedCounts[p.assignedSpot] !== undefined) {
-                assignedCounts[p.assignedSpot]++;
-            }
-        });
-
-        const spots = [];
-        const playerPos = player.position === 'DST' ? 'DEF' : player.position;
-
-        // 1. Primary Position Spot
-        if ((rosterSettings[playerPos] || 0) > 0 && assignedCounts[playerPos] < rosterSettings[playerPos]) {
-            spots.push(playerPos);
-        }
-
-        // 2. Superflex Spot
-        const isSuperflexEligible = ['QB', 'RB', 'WR', 'TE'].includes(player.position);
-        if (isSuperflexEligible && (rosterSettings.SUPERFLEX || 0) > 0 && assignedCounts.SUPERFLEX < rosterSettings.SUPERFLEX) {
-            spots.push('SUPERFLEX');
-        }
-        
-        // 3. Flex Spot
-        const isFlexEligible = ['RB', 'WR', 'TE'].includes(player.position);
-        if (isFlexEligible && (rosterSettings.FLEX || 0) > 0 && assignedCounts.FLEX < rosterSettings.FLEX) {
-            spots.push('FLEX');
-        }
-
-        // 4. Bench Spot
-        if ((rosterSettings.BENCH || 0) > 0 && assignedCounts.BENCH < rosterSettings.BENCH) {
-            spots.push('BENCH');
-        }
-        
-        return [...new Set(spots)];
-    };
-
-    const availableSpots = getAvailableSpots();
-
-    // NEW: Add a combined handler for assignment and closure
-    const handleAssignAndClose = (playerId, spot) => {
-        onAssign(playerId, spot); // Call the parent's assignment function
-        onClose(); // Explicitly close the modal
-    };
-
-    return (
-        <Modal title={`You Won ${player.name}!`} onClose={onClose}>
-            <div className="p-4 text-center">
-                <p className="text-lg text-gray-800 mb-6">
-                    Assign <span className="font-bold">{player.name} ({player.position})</span> to a roster spot.
-                </p>
-                <div className="flex flex-wrap justify-center gap-4">
-                    {availableSpots.length > 0 ? availableSpots.map(spot => (
-                        <button
-                            key={spot}
-                            onClick={() => handleAssignAndClose(player.id, spot)} // Use the new combined handler
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition-colors duration-200 shadow-md text-lg"
-                        >
-                            {spot}
-                        </button>
-                    )) : (
-                        <p className="text-red-500">No available starting spots for this position.</p>
-                    )}
-                </div>
-                 <button
-                    onClick={() => handleAssignAndClose(player.id, 'BENCH')} // Use the new combined handler
-                    className="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md"
-                >
-                    Assign to Bench
-                </button>
-            </div>
-        </Modal>
-    );
-};
 
 
 const DraftScreen = ({ league, onBackToLeagueDetails }) => {
@@ -1693,7 +1615,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     const [showAvailablePlayers, setShowAvailablePlayers] = useState(true); // New state for toggling available players
     const [showFavoritedPlayers, setShowFavoritedPlayers] = useState(true); // New state for toggling favorited players
     // REVISED: Renamed playersToAssign to playerToAssign and changed it from array to object/null
-    const [playerToAssign, setPlayerToAssign] = useState(null);
     const lastProcessedPlayerId = useRef(null); // Prevents re-triggering modal for the same player
     const timerRef = useRef(null);
     const intermissionTimerRef = useRef(null);
@@ -1740,63 +1661,84 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 	};
 	
 	const awardPlayerAndContinue = useCallback(async (player, winningTeamId, price, allBids) => {
-        const updatedPlayers = currentLeague.players.map(p =>
-            p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
-        );
+		// Find the winning team and their current roster
+		const winningTeam = currentLeague.teams.find(t => t.id === winningTeamId);
+		if (!winningTeam) return; // Should not happen, but a good safeguard
 
-        const winningTeamIndex = currentLeague.teams.findIndex(t => t.id === winningTeamId);
-        
-        let updatedTeams = [...currentLeague.teams];
+		// Determine the best available spot for the player (new smart assigning logic)
+		let assignedSpot = 'BENCH'; // Default to bench
+		const currentAssignedCounts = winningTeam.roster.reduce((counts, rosterPlayer) => {
+			if (rosterPlayer.assignedSpot) {
+				counts[rosterPlayer.assignedSpot] = (counts[rosterPlayer.assignedSpot] || 0) + 1;
+			}
+			return counts;
+		}, {});
 
-        if (winningTeamIndex !== -1) {
-            const winningTeam = updatedTeams[winningTeamIndex];
-            const newWinningTeam = {
-                ...winningTeam,
-                budget: winningTeam.budget - price,
-                roster: [...winningTeam.roster, {
-                    playerId: player.id,
-                    price,
-                    name: player.name,
-                    position: player.position,
-                    assignedSpot: 'UNASSIGNED'
-                }]
-            };
-            updatedTeams[winningTeamIndex] = newWinningTeam;
-        }
+		const playerPos = player.position === 'DST' ? 'DEF' : player.position;
 
-        const winningTeam = updatedTeams.find(t => t.id === winningTeamId);
-        const newLastDraftedPlayerInfo = {
-            player: { id: player.id, name: player.name, position: player.position, team: player.team },
-            winningTeam: { id: winningTeam.id, name: winningTeam.name, profilePicture: winningTeam.profilePicture },
-            price,
-            bidHistory: allBids.map(bid => ({ ...bid, timestamp: bid.timestamp.getTime ? bid.timestamp.getTime() : bid.timestamp }))
-        };
+		// Rule 1: Assign to primary position if available
+		if (REQUIRED_ROSTER_SPOTS[playerPos] && (currentAssignedCounts[playerPos] || 0) < REQUIRED_ROSTER_SPOTS[playerPos]) {
+			assignedSpot = playerPos;
+		}
+		// Rule 2: Assign to SUPERFLEX if eligible and available
+		else if (['QB', 'RB', 'WR', 'TE'].includes(playerPos) && REQUIRED_ROSTER_SPOTS.SUPERFLEX && (currentAssignedCounts.SUPERFLEX || 0) < REQUIRED_ROSTER_SPOTS.SUPERFLEX) {
+			assignedSpot = 'SUPERFLEX';
+		}
+		// Rule 3: Assign to FLEX if eligible and available
+		else if (['RB', 'WR', 'TE'].includes(playerPos) && REQUIRED_ROSTER_SPOTS.FLEX && (currentAssignedCounts.FLEX || 0) < REQUIRED_ROSTER_SPOTS.FLEX) {
+			assignedSpot = 'FLEX';
+		}
+		// Rule 4: If no starting spots, it's already set to 'BENCH'
 
-        const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
-        const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
+		const updatedPlayers = currentLeague.players.map(p =>
+			p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
+		);
 
-        await updateLeagueInFirestore({
-            players: updatedPlayers,
-            teams: updatedTeams,
-            currentPlayerIndex: null,
-            currentBid: 0,
-            currentBidderId: null,
-            bidEndTime: null,
-            intermissionEndTime,
-            status: 'intermission',
-            pausedAtRemainingTime: null,
-            activePlayerBids: {},
-            lastDraftedPlayerInfo: newLastDraftedPlayerInfo,
-            tiedBids: null,
-            rebidInfo: null,
-        });
-        setBidAmount(0);
+		const updatedTeams = currentLeague.teams.map(team => {
+			if (team.id === winningTeamId) {
+				return {
+					...team,
+					budget: team.budget - price,
+					roster: [...team.roster, {
+						playerId: player.id,
+						price,
+						name: player.name,
+						position: player.position,
+						assignedSpot: assignedSpot // The new auto-assigned spot
+					}]
+				};
+			}
+			return team;
+		});
 
-        if (winningTeamId === userId) {
-            setPlayerToAssign(player);
-        }
-        
-    }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount, userId]);
+		const newLastDraftedPlayerInfo = {
+			player: { id: player.id, name: player.name, position: player.position, team: player.team },
+			winningTeam: { id: winningTeam.id, name: winningTeam.name, profilePicture: winningTeam.profilePicture },
+			price,
+			bidHistory: allBids.map(bid => ({ ...bid, timestamp: bid.timestamp.getTime ? bid.timestamp.getTime() : bid.timestamp }))
+		};
+
+		const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
+		const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
+
+		await updateLeagueInFirestore({
+			players: updatedPlayers,
+			teams: updatedTeams,
+			currentPlayerIndex: null,
+			currentBid: 0,
+			currentBidderId: null,
+			bidEndTime: null,
+			intermissionEndTime,
+			status: 'intermission',
+			pausedAtRemainingTime: null,
+			activePlayerBids: {},
+			lastDraftedPlayerInfo: newLastDraftedPlayerInfo,
+			tiedBids: null,
+			rebidInfo: null,
+		});
+		setBidAmount(0);
+
+	}, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount]);
 
     const handleConfirmAssignment = async (playerId, assignedSpot) => {
         const team = currentLeague.teams.find(t => t.id === userId);
@@ -3025,94 +2967,91 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 
 			{/* 3. LEAGUE TEAMS LIST (MOVED) */}
 			<div className="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
-				<h4 className="text-lg font-semibold mb-2 text-gray-800">League Teams:</h4>
-				<ul className="space-y-2">
-					{currentLeague.teams.map(team => {
-						const isMyTeam = team.id === userId;
-						const totalSpent = team.roster.reduce((sum, player) => sum + (player.price || 0), 0);
-						const assignedCounts = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0, K: 0, FLEX: 0, SUPERFLEX: 0, BENCH: 0 };
-						const unassignedPlayers = [];
-						team.roster.forEach(p => {
-							if (p.assignedSpot && p.assignedSpot !== 'UNASSIGNED') {
-								assignedCounts[p.assignedSpot]++;
-							} else {
-								unassignedPlayers.push(p);
-							}
-						});
-						const filledSpots = { ...assignedCounts };
-						const remainingRosterSpots = TOTAL_REQUIRED_ROSTER_SLOTS - team.roster.length;
-						const maxBidForThisPlayer = team.budget - Math.max(0, remainingRosterSpots - 1);
-						return (
-							<li key={team.id} className="bg-white p-3 rounded-md shadow-sm border border-gray-200">
-								<p className="font-medium text-gray-800 flex items-center">
-									{(() => {
-										// Consider a user offline if their last update was more than 2 minutes ago
-										const TWO_MINUTES_AGO = Date.now() - (2 * 60 * 1000);
-										const lastSeenTime = team.lastSeen?.toDate ? team.lastSeen.toDate().getTime() : 0;
-										const isConsideredOnline = team.isOnline && lastSeenTime > TWO_MINUTES_AGO;
-										
-										return (
-											<span 
-												className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${isConsideredOnline ? 'bg-green-500' : 'bg-red-500'}`}
-												title={isConsideredOnline ? 'Online' : 'Offline'}
-											></span>
-										);
-									})()}
-									{team.profilePicture && (
-										<img src={team.profilePicture} alt={`${team.name} profile`} className="w-8 h-8 rounded-full object-cover mr-2" />
-									)}
-									{team.name}
-									<span className="text-sm text-gray-500 ml-2">({team.id.substring(0, 4)}...)</span>
-								</p>
-								<p className="text-sm text-gray-600">Roster: {team.roster.length} players</p>
-								{isMyTeam && (
-									<>
-										<p className="text-sm text-gray-600">Budget: ${team.budget}</p>
-										<p className="text-sm text-gray-600 font-semibold">Total Spent: ${totalSpent}</p>
-										{remainingRosterSpots > 0 && (
-											<p className="text-sm text-gray-600">
-												{/* FIX for Bug 2: Changed display to be more useful for the user.
-												 * The original text was "Avg. Budget Left per Player" but the number
-												 * was often incorrect for bidding strategy. This new display shows
-												 * the maximum a player can bid while still reserving $1 for each
-												 * remaining spot.
-												 */}
-												Max Bid for Next Player: <span className="font-semibold">${maxBidForThisPlayer}</span> <span className="text-gray-500">(to fill all spots)</span>
-											</p>
-										)}
-										<div className="mt-2 text-xs text-gray-700">
-											<p className="font-semibold">Roster Spots:</p>
-											<ul className="list-disc list-inside ml-4">
-												{Object.entries(filledSpots).map(([pos, count]) => (
-													<li key={pos}>{pos}: {count} / {REQUIRED_ROSTER_SPOTS[pos] || 0}</li>
-												))}
-												{unassignedPlayers.length > 0 && (
-													<li>Unassigned: {unassignedPlayers.length}</li>
-												)}
-											</ul>
-										</div>
-										{team.roster.length > 0 && (
-											<div className="mt-2 text-xs text-gray-500">
-												<p className="font-semibold">Roster Details:</p>
-												<ul className="list-disc list-inside ml-4">
-													{team.roster.map((rosterPlayer, idx) => {
-														const fullPlayer = currentLeague.players.find(p => p.id === rosterPlayer.playerId);
-														return (
-															<li key={idx}>
-																{fullPlayer ? `${fullPlayer.name} (${fullPlayer.position})` : `Unknown Player`} - ${rosterPlayer.price}
-															</li>
-														);
-													})}
-												</ul>
-											</div>
-										)}
-									</>
-								)}
-							</li>
-						);
-					})}
-				</ul>
-			</div>
+                <h4 className="text-lg font-semibold mb-2 text-gray-800">League Teams:</h4>
+                <ul className="space-y-2">
+                    {currentLeague.teams.map(team => {
+                        const isMyTeam = team.id === userId;
+                        const totalSpent = team.roster.reduce((sum, player) => sum + (player.price || 0), 0);
+                        const assignedCounts = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0, K: 0, FLEX: 0, SUPERFLEX: 0, BENCH: 0 };
+                        const unassignedPlayers = [];
+                        team.roster.forEach(p => {
+                            if (p.assignedSpot && p.assignedSpot !== 'UNASSIGNED') {
+                                assignedCounts[p.assignedSpot]++;
+                            } else {
+                                unassignedPlayers.push(p);
+                            }
+                        });
+                        const filledSpots = { ...assignedCounts };
+                        const remainingRosterSpots = TOTAL_REQUIRED_ROSTER_SLOTS - team.roster.length;
+                        const maxBidForThisPlayer = team.budget - Math.max(0, remainingRosterSpots - 1);
+                        return (
+                            <li key={team.id} className="bg-white p-3 rounded-md shadow-sm border border-gray-200">
+                                <p className="font-medium text-gray-800 flex items-center">
+                                    {(() => {
+                                        // Consider a user offline if their last update was more than 2 minutes ago
+                                        const TWO_MINUTES_AGO = Date.now() - (2 * 60 * 1000);
+                                        const lastSeenTime = team.lastSeen?.toDate ? team.lastSeen.toDate().getTime() : 0;
+                                        const isConsideredOnline = team.isOnline && lastSeenTime > TWO_MINUTES_AGO;
+
+                                        return (
+                                            <span
+                                                className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${isConsideredOnline ? 'bg-green-500' : 'bg-red-500'}`}
+                                                title={isConsideredOnline ? 'Online' : 'Offline'}
+                                            ></span>
+                                        );
+                                    })()}
+                                    {team.profilePicture && (
+                                        <img src={team.profilePicture} alt={`${team.name} profile`} className="w-8 h-8 rounded-full object-cover mr-2" />
+                                    )}
+                                    {team.name}
+                                    <span className="text-sm text-gray-500 ml-2">({team.id.substring(0, 4)}...)</span>
+                                </p>
+                                <p className="text-sm text-gray-600">Roster: {team.roster.length} players</p>
+                                {isMyTeam && (
+                                    <>
+                                        <p className="text-sm text-gray-600">Budget: ${team.budget}</p>
+                                        <p className="text-sm text-gray-600 font-semibold">Total Spent: ${totalSpent}</p>
+                                        {remainingRosterSpots > 0 && (
+                                            <p className="text-sm text-gray-600">
+                                                Max Bid for Next Player: <span className="font-semibold">${maxBidForThisPlayer}</span> <span className="text-gray-500">(to fill all spots)</span>
+                                            </p>
+                                        )}
+                                        <div className="mt-2 text-xs text-gray-700">
+                                            <p className="font-semibold">Roster Spots:</p>
+                                            <ul className="list-disc list-inside ml-4">
+                                                {Object.entries(filledSpots).map(([pos, count]) => (
+                                                    <li key={pos}>{pos}: {count} / {REQUIRED_ROSTER_SPOTS[pos] || 0}</li>
+                                                ))}
+                                                {unassignedPlayers.length > 0 && (
+                                                    <li>Unassigned: {unassignedPlayers.length}</li>
+                                                )}
+                                            </ul>
+                                        </div>
+                                        {team.roster.length > 0 && (
+                                            <div className="mt-2 text-xs text-gray-500">
+                                                <p className="font-semibold">Roster Details:</p>
+                                                <ul className="list-disc list-inside ml-4">
+                                                    {team.roster.map((rosterPlayer, idx) => {
+                                                        const fullPlayer = currentLeague.players.find(p => p.id === rosterPlayer.playerId);
+                                                        return (
+                                                            <li key={idx}>
+                                                                {fullPlayer ? `${fullPlayer.name} (${fullPlayer.position})` : `Unknown Player`} - ${rosterPlayer.price}
+                                                                {rosterPlayer.assignedSpot && rosterPlayer.assignedSpot !== 'UNASSIGNED' && (
+                                                                    <span className="ml-2 text-blue-600 font-medium">({rosterPlayer.assignedSpot})</span>
+                                                                )}
+                                                            </li>
+                                                        );
+                                                    })}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
 
 			{/* 4. FAVORITED PLAYERS (MOVED) */}
 			{favoritedAndAvailablePlayers.length > 0 && (
