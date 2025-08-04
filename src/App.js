@@ -23,8 +23,6 @@ import {
     getDoc // Import getDoc for global favorites check
 } from 'firebase/firestore';
 
-/* global __initial_auth_token, __app_id */
-
 // Define context for Firebase and Auth
 const FirebaseContext = createContext(null);
 
@@ -1868,7 +1866,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const winningTeamId = sortedRebids[0].bidderId;
             await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentRebids);
         }
-    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount,awardPlayerAndContinue]);
+    }, [currentLeague, updateLeagueInFirestore, setMessageModalContent, setBidAmount,awardPlayerAndContinue]);
 
 
     const handleBidEnd = useCallback(async () => {
@@ -1937,7 +1935,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const winningTeamId = sortedBids[0].bidderId;
             await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentBids);
         }
-    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount,awardPlayerAndContinue]);
+    }, [currentLeague, updateLeagueInFirestore, setMessageModalContent, setBidAmount,awardPlayerAndContinue]);
 
 
     const handleAutoNominateNextPlayer = useCallback(async () => {
@@ -2450,7 +2448,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				}
 			}
 		}
-	}, [currentLeague.beerRequests, currentLeague.beerDutyTeamId, userId, currentLeague.id]);
+	}, [currentLeague.beerRequests, currentLeague.beerDutyTeamId, userId, currentLeague.id,currentLeague.teams]);
 	
 
     const handleKickMember = async (memberIdToKick) => {
