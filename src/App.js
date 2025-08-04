@@ -1710,7 +1710,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 
     const TOTAL_REQUIRED_ROSTER_SLOTS = Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
 
-    //const REBID_DURATION = 15;
+    //const REBID_DURATION = 15; 
 
     useEffect(() => {
         localStorage.setItem('quickBid1', quickBid1.toString());
