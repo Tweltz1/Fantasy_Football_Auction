@@ -1736,7 +1736,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         });
         setBidAmount(0);
 
-    }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount,REQUIRED_ROSTER_SPOTS]);
+    }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount,REQUIRED_ROSTER_SPOTS]); 
 
  
     const handleRebidEnd = useCallback(async () => {
