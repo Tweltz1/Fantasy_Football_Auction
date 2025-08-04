@@ -2,6 +2,8 @@ import React, { useState, useEffect, createContext, useContext, useRef, useCallb
 import { initializeApp } from 'firebase/app';
 import {
     getAuth,
+    signInAnonymously,
+    signInWithCustomToken,
     onAuthStateChanged,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -21,6 +23,8 @@ import {
     setDoc, // Import setDoc for global favorites
     getDoc // Import getDoc for global favorites check
 } from 'firebase/firestore';
+
+/* global __initial_auth_token, __app_id */
 
 // Define context for Firebase and Auth
 const FirebaseContext = createContext(null);
@@ -253,58 +257,58 @@ const MASTER_PLAYER_LIST = [
     { id: 'p224', name: 'Jaleel McLaughlin', position: 'RB', team: 'DEN', rank: 224, image: 'https://placehold.co/100x100/0000CD/FFFFFF?text=JM', status: 'available' },
     { id: 'p225', name: 'Kendre Miller', position: 'RB', team: 'NO', rank: 225, image: 'https://placehold.co/100x100/4169E1/FFFFFF?text=KM', status: 'available' },
     { id: 'p226', name: 'Calvin Austin III', position: 'WR', team: 'PIT', rank: 226, image: 'https://placehold.co/100x100/1E90FF/FFFFFF?text=CA', status: 'available' },
-    { id: 'p227', name: 'Elic Ayomanor', position: 'WR', team: 'TEN', rank: 227, image: 'https://placehold.co/100x100/ADD8E6/000000?text=EA', status: 'available' },
-    { id: 'p228', name: 'Tyler Lockett', position: 'WR', team: 'TEN', rank: 228, image: 'https://placehold.co/100x100/B0E0E6/000000?text=TL', status: 'available' },
-    { id: 'p229', name: 'Anthony Richardson Sr.', position: 'QB', team: 'IND', rank: 229, image: 'https://placehold.co/100x100/87CEFA/FFFFFF?text=AR', status: 'available' },
-    { id: 'p230', name: 'San Francisco 49ers', position: 'DST', team: 'SF', rank: 230, image: 'https://placehold.co/100x100/87CEEB/FFFFFF?text=SF', status: 'available' },
-    { id: 'p231', name: 'Jason Sanders', position: 'K', team: 'MIA', rank: 231, image: 'https://placehold.co/100x100/6495ED/FFFFFF?text=JS', status: 'available' },
-    { id: 'p232', name: 'Younghoe Koo', position: 'K', team: 'ATL', rank: 232, image: 'https://placehold.co/100x100/B0C4DE/000000?text=YK', status: 'available' },
-    { id: 'p233', name: 'Devin Neal', position: 'RB', team: 'NO', rank: 233, image: 'https://placehold.co/100x100/778899/FFFFFF?text=DN', status: 'available' },
-    { id: 'p234', name: 'Russell Wilson', position: 'QB', team: 'NYG', rank: 234, image: 'https://placehold.co/100x100/708090/FFFFFF?text=RW', status: 'available' },
-    { id: 'p235', name: 'Keenan Allen', position: 'WR', team: 'FA', rank: 235, image: 'https://placehold.co/100x100/696969/FFFFFF?text=KA', status: 'available' },
-    { id: 'p236', name: 'Ja\'Tavion Sanders', position: 'TE', team: 'CAR', rank: 236, image: 'https://placehold.co/100x100/F0F8FF/000000?text=JS', status: 'available' },
-    { id: 'p237', name: 'Brandin Cooks', position: 'WR', team: 'NO', rank: 237, image: 'https://placehold.co/100x100/F5F5F5/000000?text=BC', status: 'available' },
-    { id: 'p238', name: 'Miles Sanders', position: 'RB', team: 'DAL', rank: 238, image: 'https://placehold.co/100x100/DCDCDC/000000?text=MS', status: 'available' },
-    { id: 'p239', name: 'Jalen Tolbert', position: 'WR', team: 'DAL', rank: 239, image: 'https://placehold.co/100x100/D3D3D3/000000?text=JT', status: 'available' },
-    { id: 'p240', name: 'Cole Kmet', position: 'TE', team: 'CHI', rank: 240, image: 'https://placehold.co/100x100/A9A9A9/FFFFFF?text=CK', status: 'available' },
-    { id: 'p241', name: 'Pat Bryant', position: 'WR', team: 'DEN', rank: 241, image: 'https://placehold.co/100x100/C0C0C0/000000?text=PB', status: 'available' },
-    { id: 'p242', name: 'Juwan Johnson', position: 'TE', team: 'NO', rank: 242, image: 'https://placehold.co/100x100/E6E6FA/000000?text=JJ', status: 'available' },
-    { id: 'p243', name: 'Kyle Monangai', position: 'RB', team: 'CHI', rank: 243, image: 'https://placehold.co/100x100/D8BFD8/000000?text=KM', status: 'available' },
-    { id: 'p244', name: 'Dallas Cowboys', position: 'DST', team: 'DAL', rank: 244, image: 'https://placehold.co/100x100/FF6347/FFFFFF?text=DC', status: 'available' },
-    { id: 'p245', name: 'Audric Estime', position: 'RB', team: 'DEN', rank: 245, image: 'https://placehold.co/100x100/FF4500/FFFFFF?text=AE', status: 'available' },
-    { id: 'p246', name: 'Raheem Mostert', position: 'RB', team: 'LV', rank: 246, image: 'https://placehold.co/100x100/FF0000/FFFFFF?text=RM', status: 'available' },
-    { id: 'p247', name: 'Elijah Moore', position: 'WR', team: 'BUF', rank: 247, image: 'https://placehold.co/100x100/DC143C/FFFFFF?text=EM', status: 'available' },
-    { id: 'p248', name: 'Elijah Mitchell', position: 'RB', team: 'KC', rank: 248, image: 'https://placehold.co/100x100/B22222/FFFFFF?text=EM', status: 'available' },
-    { id: 'p249', name: 'Will Shipley', position: 'RB', team: 'PHI', rank: 249, image: 'https://placehold.co/100x100/A52A2A/FFFFFF?text=WS', status: 'available' },
-    { id: 'p250', name: 'Nick Westbrook-Ikhine', position: 'WR', team: 'MIA', rank: 250, image: 'https://placehold.co/100x100/8B0000/FFFFFF?text=NW', status: 'available' },
+    { id: 'p227', name: 'Elic Ayomanor', position: 'WR', team: 'TEN', rank: 227, image: 'https://placehold.co/100x100/00BFFF/FFFFFF?text=EA', status: 'available' },
+    { id: 'p228', name: 'Tyler Lockett', position: 'WR', team: 'TEN', rank: 228, image: 'https://placehold.co/100x100/ADD8E6/000000?text=TL', status: 'available' },
+    { id: 'p229', name: 'Anthony Richardson Sr.', position: 'QB', team: 'IND', rank: 229, image: 'https://placehold.co/100x100/B0E0E6/000000?text=AR', status: 'available' },
+    { id: 'p230', name: 'San Francisco 49ers', position: 'DST', team: 'SF', rank: 230, image: 'https://placehold.co/100x100/87CEFA/FFFFFF?text=SF', status: 'available' },
+    { id: 'p231', name: 'Jason Sanders', position: 'K', team: 'MIA', rank: 231, image: 'https://placehold.co/100x100/87CEEB/FFFFFF?text=JS', status: 'available' },
+    { id: 'p232', name: 'Younghoe Koo', position: 'K', team: 'ATL', rank: 232, image: 'https://placehold.co/100x100/6495ED/FFFFFF?text=YK', status: 'available' },
+    { id: 'p233', name: 'Devin Neal', position: 'RB', team: 'NO', rank: 233, image: 'https://placehold.co/100x100/B0C4DE/000000?text=DN', status: 'available' },
+    { id: 'p234', name: 'Russell Wilson', position: 'QB', team: 'NYG', rank: 234, image: 'https://placehold.co/100x100/778899/FFFFFF?text=RW', status: 'available' },
+    { id: 'p235', name: 'Keenan Allen', position: 'WR', team: 'FA', rank: 235, image: 'https://placehold.co/100x100/708090/FFFFFF?text=KA', status: 'available' },
+    { id: 'p236', name: 'Ja\'Tavion Sanders', position: 'TE', team: 'CAR', rank: 236, image: 'https://placehold.co/100x100/696969/FFFFFF?text=JS', status: 'available' },
+    { id: 'p237', name: 'Brandin Cooks', position: 'WR', team: 'NO', rank: 237, image: 'https://placehold.co/100x100/F0F8FF/000000?text=BC', status: 'available' },
+    { id: 'p238', name: 'Miles Sanders', position: 'RB', team: 'DAL', rank: 238, image: 'https://placehold.co/100x100/F5F5F5/000000?text=MS', status: 'available' },
+    { id: 'p239', name: 'Jalen Tolbert', position: 'WR', team: 'DAL', rank: 239, image: 'https://placehold.co/100x100/DCDCDC/000000?text=JT', status: 'available' },
+    { id: 'p240', name: 'Cole Kmet', position: 'TE', team: 'CHI', rank: 240, image: 'https://placehold.co/100x100/D3D3D3/000000?text=CK', status: 'available' },
+    { id: 'p241', name: 'Pat Bryant', position: 'WR', team: 'DEN', rank: 241, image: 'https://placehold.co/100x100/A9A9A9/FFFFFF?text=PB', status: 'available' },
+    { id: 'p242', name: 'Juwan Johnson', position: 'TE', team: 'NO', rank: 242, image: 'https://placehold.co/100x100/C0C0C0/000000?text=JJ', status: 'available' },
+    { id: 'p243', name: 'Kyle Monangai', position: 'RB', team: 'CHI', rank: 243, image: 'https://placehold.co/100x100/E6E6FA/000000?text=KM', status: 'available' },
+    { id: 'p244', name: 'Dallas Cowboys', position: 'DST', team: 'DAL', rank: 244, image: 'https://placehold.co/100x100/D8BFD8/000000?text=DC', status: 'available' },
+    { id: 'p245', name: 'Audric Estime', position: 'RB', team: 'DEN', rank: 245, image: 'https://placehold.co/100x100/FF6347/FFFFFF?text=AE', status: 'available' },
+    { id: 'p246', name: 'Raheem Mostert', position: 'RB', team: 'LV', rank: 246, image: 'https://placehold.co/100x100/FF4500/FFFFFF?text=RM', status: 'available' },
+    { id: 'p247', name: 'Elijah Moore', position: 'WR', team: 'BUF', rank: 247, image: 'https://placehold.co/100x100/FF0000/FFFFFF?text=EM', status: 'available' },
+    { id: 'p248', name: 'Elijah Mitchell', position: 'RB', team: 'KC', rank: 248, image: 'https://placehold.co/100x100/DC143C/FFFFFF?text=EM', status: 'available' },
+    { id: 'p249', name: 'Will Shipley', position: 'RB', team: 'PHI', rank: 249, image: 'https://placehold.co/100x100/B22222/FFFFFF?text=WS', status: 'available' },
+    { id: 'p250', name: 'Nick Westbrook-Ikhine', position: 'WR', team: 'MIA', rank: 250, image: 'https://placehold.co/100x100/A52A2A/FFFFFF?text=NW', status: 'available' },
     // --- Defenses ---
-    { id: 'p251', name: 'Tampa Bay Buccaneers', position: 'DST', team: 'TB', rank: 251, image: 'https://placehold.co/100x100/FFFFFF/000000?text=TB', status: 'available' },
-    { id: 'p252', name: 'Chicago Bears', position: 'DST', team: 'CHI', rank: 252, image: 'https://placehold.co/100x100/8A2BE2/FFFFFF?text=CB', status: 'available' },
-    { id: 'p253', name: 'New England Patriots', position: 'DST', team: 'NE', rank: 253, image: 'https://placehold.co/100x100/9932CC/FFFFFF?text=NE', status: 'available' },
-    { id: 'p254', name: 'Arizona Cardinals', position: 'DST', team: 'ARI', rank: 254, image: 'https://placehold.co/100x100/9400D3/FFFFFF?text=AC', status: 'available' },
-    { id: 'p255', name: 'Cleveland Browns', position: 'DST', team: 'CLE', rank: 255, image: 'https://placehold.co/100x100/8B008B/FFFFFF?text=CB', status: 'available' },
-    { id: 'p256', name: 'New York Giants', position: 'DST', team: 'NYG', rank: 256, image: 'https://placehold.co/100x100/800080/FFFFFF?text=NY', status: 'available' },
-    { id: 'p257', name: 'Miami Dolphins', position: 'DST', team: 'MIA', rank: 257, image: 'https://placehold.co/100x100/663399/FFFFFF?text=MD', status: 'available' },
-    { id: 'p258', name: 'Washington Commanders', position: 'DST', team: 'WAS', rank: 258, image: 'https://placehold.co/100x100/483D8B/FFFFFF?text=WC', status: 'available' },
-    { id: 'p259', name: 'Atlanta Falcons', position: 'DST', team: 'ATL', rank: 259, image: 'https://placehold.co/100x100/191970/FFFFFF?text=AF', status: 'available' },
-    { id: 'p260', name: 'Cincinnati Bengals', position: 'DST', team: 'CIN', rank: 260, image: 'https://placehold.co/100x100/000080/FFFFFF?text=CB', status: 'available' },
-    { id: 'p261', name: 'Indianapolis Colts', position: 'DST', team: 'IND', rank: 261, image: 'https://placehold.co/100x100/00008B/FFFFFF?text=IC', status: 'available' },
-    { id: 'p262', name: 'New Orleans Saints', position: 'DST', team: 'NO', rank: 262, image: 'https://placehold.co/100x100/0000CD/FFFFFF?text=NO', status: 'available' },
-    { id: 'p263', name: 'Las Vegas Raiders', position: 'DST', team: 'LV', rank: 263, image: 'https://placehold.co/100x100/4169E1/FFFFFF?text=LV', status: 'available' },
-    { id: 'p264', name: 'Jacksonville Jaguars', position: 'DST', team: 'JAC', rank: 264, image: 'https://placehold.co/100x100/1E90FF/FFFFFF?text=JJ', status: 'available' },
-    { id: 'p265', name: 'Tennessee Titans', position: 'DST', team: 'TEN', rank: 265, image: 'https://placehold.co/100x100/00BFFF/FFFFFF?text=TT', status: 'available' },
-    { id: 'p266', name: 'Carolina Panthers', position: 'DST', team: 'CAR', rank: 266, image: 'https://placehold.co/100x100/87CEFA/FFFFFF?text=CP', status: 'available' },
+    { id: 'p251', name: 'Tampa Bay Buccaneers', position: 'DST', team: 'TB', rank: 251, image: 'https://placehold.co/100x100/708090/FFFFFF?text=TB', status: 'available' },
+    { id: 'p252', name: 'Chicago Bears', position: 'DST', team: 'CHI', rank: 252, image: 'https://placehold.co/100x100/778899/FFFFFF?text=CB', status: 'available' },
+    { id: 'p253', name: 'New England Patriots', position: 'DST', team: 'NE', rank: 253, image: 'https://placehold.co/100x100/696969/FFFFFF?text=NE', status: 'available' },
+    { id: 'p254', name: 'Arizona Cardinals', position: 'DST', team: 'ARI', rank: 254, image: 'https://placehold.co/100x100/2F4F4F/FFFFFF?text=AC', status: 'available' },
+    { id: 'p255', name: 'Cleveland Browns', position: 'DST', team: 'CLE', rank: 255, image: 'https://placehold.co/100x100/008B8B/FFFFFF?text=CB', status: 'available' },
+    { id: 'p256', name: 'New York Giants', position: 'DST', team: 'NYG', rank: 256, image: 'https://placehold.co/100x100/483D8B/FFFFFF?text=NY', status: 'available' },
+    { id: 'p257', name: 'Miami Dolphins', position: 'DST', team: 'MIA', rank: 257, image: 'https://placehold.co/100x100/2F4F4F/FFFFFF?text=MD', status: 'available' },
+    { id: 'p258', name: 'Washington Commanders', position: 'DST', team: 'WAS', rank: 258, image: 'https://placehold.co/100x100/00CED1/FFFFFF?text=WC', status: 'available' },
+    { id: 'p259', name: 'Atlanta Falcons', position: 'DST', team: 'ATL', rank: 259, image: 'https://placehold.co/100x100/1E90FF/FFFFFF?text=AF', status: 'available' },
+    { id: 'p260', name: 'Cincinnati Bengals', position: 'DST', team: 'CIN', rank: 260, image: 'https://placehold.co/100x100/B0C4DE/FFFFFF?text=CB', status: 'available' },
+    { id: 'p261', name: 'Indianapolis Colts', position: 'DST', team: 'IND', rank: 261, image: 'https://placehold.co/100x100/ADD8E6/000000?text=IC', status: 'available' },
+    { id: 'p262', name: 'New Orleans Saints', position: 'DST', team: 'NO', rank: 262, image: 'https://placehold.co/100x100/B0E0E6/000000?text=NO', status: 'available' },
+    { id: 'p263', name: 'Las Vegas Raiders', position: 'DST', team: 'LV', rank: 263, image: 'https://placehold.co/100x100/87CEFA/FFFFFF?text=LV', status: 'available' },
+    { id: 'p264', name: 'Jacksonville Jaguars', position: 'DST', team: 'JAC', rank: 264, image: 'https://placehold.co/100x100/87CEEB/FFFFFF?text=JJ', status: 'available' },
+    { id: 'p265', name: 'Tennessee Titans', position: 'DST', team: 'TEN', rank: 265, image: 'https://placehold.co/100x100/6495ED/FFFFFF?text=TT', status: 'available' },
+    { id: 'p266', name: 'Carolina Panthers', position: 'DST', team: 'CAR', rank: 266, image: 'https://placehold.co/100x100/B0C4DE/000000?text=CP', status: 'available' },
     // --- Kickers ---
-    { id: 'p267', name: 'Tyler Loop', position: 'K', team: 'BAL', rank: 267, image: 'https://placehold.co/100x100/87CEEB/FFFFFF?text=TL', status: 'available' },
-    { id: 'p268', name: 'Cam Little', position: 'K', team: 'JAC', rank: 268, image: 'https://placehold.co/100x100/6495ED/FFFFFF?text=CL', status: 'available' },
-    { id: 'p269', name: 'Cairo Santos', position: 'K', team: 'CHI', rank: 269, image: 'https://placehold.co/100x100/B0C4DE/000000?text=CS', status: 'available' },
-    { id: 'p270', name: 'Jake Moody', position: 'K', team: 'SF', rank: 270, image: 'https://placehold.co/100x100/ADD8E6/000000?text=JM', status: 'available' },
-    { id: 'p271', name: 'Brandon McManus', position: 'K', team: 'GB', rank: 271, image: 'https://placehold.co/100x100/B0E0E6/000000?text=BM', status: 'available' },
-    { id: 'p272', name: 'Blake Grupe', position: 'K', team: 'NO', rank: 272, image: 'https://placehold.co/100x100/FFFAF0/000000?text=BG', status: 'available' },
-    { id: 'p273', name: 'Graham Gano', position: 'K', team: 'NYG', rank: 273, image: 'https://placehold.co/100x100/F0FFF0/000000?text=GG', status: 'available' },
-    { id: 'p274', name: 'Chad Ryland', position: 'K', team: 'ARI', rank: 274, image: 'https://placehold.co/100x100/F5FFFA/000000?text=CR', status: 'available' },
-    { id: 'p275', name: 'Andy Borregales', position: 'K', team: 'NE', rank: 275, image: 'https://placehold.co/100x100/F0FFFF/000000?text=AB', status: 'available' },
-    { id: 'p276', name: 'Justin Tucker', position: 'K', team: 'FA', rank: 276, image: 'https://placehold.co/100x100/F5F5F5/000000?text=JT', status: 'available' },
+    { id: 'p267', name: 'Tyler Loop', position: 'K', team: 'BAL', rank: 267, image: 'https://placehold.co/100x100/F0F8FF/000000?text=TL', status: 'available' },
+    { id: 'p268', name: 'Cam Little', position: 'K', team: 'JAC', rank: 268, image: 'https://placehold.co/100x100/FAEBD7/000000?text=CL', status: 'available' },
+    { id: 'p269', name: 'Cairo Santos', position: 'K', team: 'CHI', rank: 269, image: 'https://placehold.co/100x100/FFE4C4/000000?text=CS', status: 'available' },
+    { id: 'p270', name: 'Jake Moody', position: 'K', team: 'SF', rank: 270, image: 'https://placehold.co/100x100/DEB887/000000?text=JM', status: 'available' },
+    { id: 'p271', name: 'Brandon McManus', position: 'K', team: 'GB', rank: 271, image: 'https://placehold.co/100x100/5F9EA0/FFFFFF?text=BM', status: 'available' },
+    { id: 'p272', name: 'Blake Grupe', position: 'K', team: 'NO', rank: 272, image: 'https://placehold.co/100x100/7FFF00/000000?text=BG', status: 'available' },
+    { id: 'p273', name: 'Graham Gano', position: 'K', team: 'NYG', rank: 273, image: 'https://placehold.co/100x100/D2691E/FFFFFF?text=GG', status: 'available' },
+    { id: 'p274', name: 'Chad Ryland', position: 'K', team: 'ARI', rank: 274, image: 'https://placehold.co/100x100/FF7F50/FFFFFF?text=CR', status: 'available' },
+    { id: 'p275', name: 'Andy Borregales', position: 'K', team: 'NE', rank: 275, image: 'https://placehold.co/100x100/6495ED/FFFFFF?text=AB', status: 'available' },
+    { id: 'p276', name: 'Justin Tucker', position: 'K', team: 'FA', rank: 276, image: 'https://placehold.co/100x100/DC143C/FFFFFF?text=JT', status: 'available' },
 ];
 
 
@@ -317,7 +321,7 @@ const FirebaseProvider = ({ children }) => {
     const [currentUserEmail, setCurrentUserEmail] = useState(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [globalFavorites, setGlobalFavorites] = useState([]); // New state for global favorites
-    const appId = 'default-app-id';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
     useEffect(() => {
         try {
@@ -603,7 +607,7 @@ const LeagueList = ({ onSelectLeague, userId, onEditRosterSettings, onEditTeamPr
 
         setLoading(true);
         setError(null);
-        const appId = 'default-app-id';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         const publicLeaguesRef = collection(db, `artifacts/${appId}/public/data/leagues`);
         const q = query(publicLeaguesRef);
@@ -734,7 +738,7 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
     const [teamToEdit, setTeamToEdit] = useState(null);
     const [message, setMessage] = useState('');
     const [messageModalContent, setMessageModalContent] = useState(null);
-    const appId = 'default-app-id';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
     // Default roster settings for new leagues
     const DEFAULT_ROSTER_SETTINGS = {
@@ -747,9 +751,6 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
         FLEX: 1,
         SUPERFLEX: 1,
         BENCH: 6,
-		bidDuration: 20,       // ADD THIS
-		intermission: 30,    // ADD THIS
-		rebidDuration: 15,     // ADD THIS
     };
 
     const handleCreateLeague = async (leagueName, joinPassword) => {
@@ -774,7 +775,7 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
                 pausedAtRemainingTime: null,
                 activePlayerBids: {},
                 players: MASTER_PLAYER_LIST.map(p => ({...p, status: 'available'})), // Use MASTER_PLAYER_LIST for new leagues
-                teams: [{ id: userId, name: `Team ${userId.substring(0, 4)}`, budget: 200, roster: [], profilePicture: null, isOnline: false, lastSeen: null }],
+                teams: [{ id: userId, name: `Team ${userId.substring(0, 4)}`, budget: 200, roster: [], profilePicture: null }],
                 rosterSettings: DEFAULT_ROSTER_SETTINGS,
                 joinPassword: joinPassword || null,
                 lastCompletedDraft: null,
@@ -821,7 +822,7 @@ const LeaguesScreen = ({ onSelectLeague, userId }) => {
             }
 
             const updatedMembers = [...(leagueData.members || []), userId];
-            const updatedTeams = [...(leagueData.teams || []), { id: userId, name: `Team ${userId.substring(0, 4)}`, budget: 200, roster: [], profilePicture: null, isOnline: false, lastSeen: null }];
+            const updatedTeams = [...(leagueData.teams || []), { id: userId, name: `Team ${userId.substring(0, 4)}`, budget: 200, roster: [], profilePicture: null }];
 
             await updateDoc(doc(db, `artifacts/${appId}/public/data/leagues`, leagueId), {
                 members: updatedMembers,
@@ -1283,7 +1284,7 @@ const EditRosterSettingsModal = ({ league, onSave, onClose }) => {
         onSave(league.id, settings);
     };
 
-    const rosterPositions = ['QB', 'RB', 'WR', 'TE', 'DEF', 'K', 'FLEX', 'SUPERFLEX', 'BENCH', 'bidDuration', 'intermission', 'rebidDuration'];
+    const rosterPositions = ['QB', 'RB', 'WR', 'TE', 'DEF', 'K', 'FLEX', 'SUPERFLEX', 'BENCH'];
 
     return (
         <Modal title={`Edit Roster Settings for ${league.name}`} onClose={onClose}>
@@ -1447,31 +1448,6 @@ const PastRosterModal = ({ pastRosterData, onClose }) => {
     );
 };
 
-// ADDED: NEW BEER DUTY MODAL COMPONENT
-const BeerDutyModal = ({ league, onSetBeerDuty, onClose }) => {
-    return (
-        <Modal title="Assign Beer Duty" onClose={onClose}>
-            <div className="p-4">
-                <h4 className="text-lg font-semibold mb-3">Select a team for Beer Duty:</h4>
-                <ul className="space-y-2">
-                    {league.teams.map(team => (
-                        <li key={team.id} className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
-                            <span>{team.name} {league.beerDutyTeamId === team.id && '(Current)'}</span>
-                            <button
-                                onClick={() => onSetBeerDuty(team.id)}
-                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded-md text-xs shadow-sm"
-                                disabled={league.beerDutyTeamId === team.id}
-                            >
-                                Assign
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        </Modal>
-    );
-};
-
 const EditTeamProfileModal = ({ leagueId, teamId, currentName, currentProfilePicture, onSave, onClose }) => {
     const [newTeamName, setNewTeamName] = useState(currentName);
     const [profilePicturePreview, setProfilePicturePreview] = useState(currentProfilePicture);
@@ -1593,6 +1569,78 @@ const getRandomAvailablePlayerIndex = (players) => {
     return availablePlayerIndices[randomIndex];
 };
 
+// Add this new component to your App.js file
+const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) => {
+    const getAvailableSpots = () => {
+        if (!team || !player) return [];
+
+        // --- Calculate current roster counts from players already assigned a spot ---
+        const assignedCounts = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0, K: 0, FLEX: 0, SUPERFLEX: 0, BENCH: 0 };
+        team.roster.forEach(p => {
+            if (p.assignedSpot && p.assignedSpot !== 'UNASSIGNED' && assignedCounts[p.assignedSpot] !== undefined) {
+                assignedCounts[p.assignedSpot]++;
+            }
+        });
+
+        const spots = [];
+        const playerPos = player.position === 'DST' ? 'DEF' : player.position;
+
+        // 1. Primary Position Spot
+        if ((rosterSettings[playerPos] || 0) > 0 && assignedCounts[playerPos] < rosterSettings[playerPos]) {
+            spots.push(playerPos);
+        }
+
+        // 2. Superflex Spot
+        const isSuperflexEligible = ['QB', 'RB', 'WR', 'TE'].includes(player.position);
+        if (isSuperflexEligible && (rosterSettings.SUPERFLEX || 0) > 0 && assignedCounts.SUPERFLEX < rosterSettings.SUPERFLEX) {
+            spots.push('SUPERFLEX');
+        }
+        
+        // 3. Flex Spot
+        const isFlexEligible = ['RB', 'WR', 'TE'].includes(player.position);
+        if (isFlexEligible && (rosterSettings.FLEX || 0) > 0 && assignedCounts.FLEX < rosterSettings.FLEX) {
+            spots.push('FLEX');
+        }
+
+        // 4. Bench Spot
+        if ((rosterSettings.BENCH || 0) > 0 && assignedCounts.BENCH < rosterSettings.BENCH) {
+            spots.push('BENCH');
+        }
+        
+        return [...new Set(spots)];
+    };
+
+    const availableSpots = getAvailableSpots();
+
+    return (
+        <Modal title={`You Won ${player.name}!`} onClose={onClose}>
+            <div className="p-4 text-center">
+                <p className="text-lg text-gray-800 mb-6">
+                    Assign <span className="font-bold">{player.name} ({player.position})</span> to a roster spot.
+                </p>
+                <div className="flex flex-wrap justify-center gap-4">
+                    {availableSpots.length > 0 ? availableSpots.map(spot => (
+                        <button
+                            key={spot}
+                            onClick={() => onAssign(player.id, spot)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition-colors duration-200 shadow-md text-lg"
+                        >
+                            {spot}
+                        </button>
+                    )) : (
+                        <p className="text-red-500">No available starting spots for this position.</p>
+                    )}
+                </div>
+                 <button
+                    onClick={() => onAssign(player.id, 'BENCH')}
+                    className="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md"
+                >
+                    Assign to Bench
+                </button>
+            </div>
+        </Modal>
+    );
+};
 
 
 const DraftScreen = ({ league, onBackToLeagueDetails }) => {
@@ -1606,36 +1654,28 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     const [showNominatePlayerModal, setShowNominatePlayerModal] = useState(false);
     const [showManageMembersModal, setShowManageMembersModal] = useState(false);
     const [messageModalContent, setMessageModalContent] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [showEditBudgetModal, setShowEditBudgetModal] = useState(false);
-    const [teamToEditBudget, setTeamToEditBudget] = useState(null);
-    const [sortPosition, setSortPosition] = useState('All');
-    const [showBeerDutyModal, setShowBeerDutyModal] = useState(false);
-    const [setLastBeerRequest] = useState(0);
-    const [showAvailablePlayers, setShowAvailablePlayers] = useState(true);
-    const [showFavoritedPlayers, setShowFavoritedPlayers] = useState(true);
-    const lastProcessedPlayerId = useRef(null);
+	const [searchTerm, setSearchTerm] = useState('');
+	const [showEditBudgetModal, setShowEditBudgetModal] = useState(false);
+	const [teamToEditBudget, setTeamToEditBudget] = useState(null);
+    const [sortPosition, setSortPosition] = useState('All'); // For available players list
+    const [showAvailablePlayers, setShowAvailablePlayers] = useState(true); // New state for toggling available players
+    const [showFavoritedPlayers, setShowFavoritedPlayers] = useState(true); // New state for toggling favorited players
+    const [playersToAssign, setPlayersToAssign] = useState([]);
+    const lastProcessedPlayerId = useRef(null); // Prevents re-triggering modal for the same player
     const timerRef = useRef(null);
     const intermissionTimerRef = useRef(null);
     const rebidTimerRef = useRef(null);
-    const leagueRef = useRef(currentLeague);
-
-    useEffect(() => {
-        leagueRef.current = currentLeague;
-    }, [currentLeague])
-    const appId = 'default-app-id';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
     const isLeagueAdmin = currentLeague.adminId === userId;
 
-    const REQUIRED_ROSTER_SPOTS = React.useMemo(() => {
-        return currentLeague.rosterSettings || {
-            QB: 1, RB: 2, WR: 3, TE: 1, DEF: 1, K: 1, FLEX: 1, SUPERFLEX: 1, BENCH: 6
-        };
-    }, [currentLeague.rosterSettings]);
-    
-    const TOTAL_REQUIRED_ROSTER_SLOTS = React.useMemo(() => {
-        return Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
-    }, [REQUIRED_ROSTER_SPOTS]);
+    const REQUIRED_ROSTER_SPOTS = currentLeague.rosterSettings || {
+        QB: 1, RB: 2, WR: 3, TE: 1, DEF: 1, K: 1, FLEX: 1, SUPERFLEX: 1, BENCH: 6
+    };
+
+    const TOTAL_REQUIRED_ROSTER_SLOTS = Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
+
+    const REBID_DURATION = 15;
 
     useEffect(() => {
         localStorage.setItem('quickBid1', quickBid1.toString());
@@ -1651,46 +1691,18 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         }
     }, [db, currentLeague.id, appId]);
 
-    const handleSaveBudget = async (teamId, newBudget) => {
-        const updatedTeams = currentLeague.teams.map(team =>
-            team.id === teamId ? { ...team, budget: newBudget } : team
-        );
-        await updateLeagueInFirestore({ teams: updatedTeams });
-        setShowEditBudgetModal(false);
-        setTeamToEditBudget(null);
-        setMessageModalContent("Team budget updated successfully!");
-    };
-    
-    const awardPlayerAndContinue = useCallback(async (player, winningTeamId, price, allBids) => {
-        // Find the winning team and their current roster
-        const winningTeam = currentLeague.teams.find(t => t.id === winningTeamId);
-        if (!winningTeam) return;
 
-        // Determine the best available spot for the player (new smart assigning logic)
-        let assignedSpot = 'BENCH'; // Default to bench
-        const currentAssignedCounts = winningTeam.roster.reduce((counts, rosterPlayer) => {
-            if (rosterPlayer.assignedSpot) {
-                counts[rosterPlayer.assignedSpot] = (counts[rosterPlayer.assignedSpot] || 0) + 1;
-            }
-            return counts;
-        }, {});
-
-        const playerPos = player.position === 'DST' ? 'DEF' : player.position;
-
-        // Rule 1: Assign to primary position if available
-        if (REQUIRED_ROSTER_SPOTS[playerPos] && (currentAssignedCounts[playerPos] || 0) < REQUIRED_ROSTER_SPOTS[playerPos]) {
-            assignedSpot = playerPos;
-        }
-        // Rule 2: Assign to SUPERFLEX if eligible and available
-        else if (['QB', 'RB', 'WR', 'TE'].includes(playerPos) && REQUIRED_ROSTER_SPOTS.SUPERFLEX && (currentAssignedCounts.SUPERFLEX || 0) < REQUIRED_ROSTER_SPOTS.SUPERFLEX) {
-            assignedSpot = 'SUPERFLEX';
-        }
-        // Rule 3: Assign to FLEX if eligible and available
-        else if (['RB', 'WR', 'TE'].includes(playerPos) && REQUIRED_ROSTER_SPOTS.FLEX && (currentAssignedCounts.FLEX || 0) < REQUIRED_ROSTER_SPOTS.FLEX) {
-            assignedSpot = 'FLEX';
-        }
-        // Rule 4: If no starting spots, it's already set to 'BENCH'
-
+	const handleSaveBudget = async (teamId, newBudget) => {
+		const updatedTeams = currentLeague.teams.map(team => 
+			team.id === teamId ? { ...team, budget: newBudget } : team
+		);
+		await updateLeagueInFirestore({ teams: updatedTeams });
+		setShowEditBudgetModal(false);
+		setTeamToEditBudget(null);
+		setMessageModalContent("Team budget updated successfully!");
+	};
+	
+	const awardPlayerAndContinue = async (player, winningTeamId, price, allBids) => {
         const updatedPlayers = currentLeague.players.map(p =>
             p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
         );
@@ -1700,18 +1712,19 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
                 return {
                     ...team,
                     budget: team.budget - price,
-                    roster: [...team.roster, {
-                        playerId: player.id,
-                        price,
-                        name: player.name,
+                    roster: [...team.roster, { 
+                        playerId: player.id, 
+                        price, 
+                        name: player.name, 
                         position: player.position,
-                        assignedSpot: assignedSpot // The new auto-assigned spot
+                        assignedSpot: 'UNASSIGNED' // Temporarily unassigned
                     }]
                 };
             }
             return team;
         });
 
+        const winningTeam = updatedTeams.find(t => t.id === winningTeamId);
         const newLastDraftedPlayerInfo = {
             player: { id: player.id, name: player.name, position: player.position, team: player.team },
             winningTeam: { id: winningTeam.id, name: winningTeam.name, profilePicture: winningTeam.profilePicture },
@@ -1719,7 +1732,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             bidHistory: allBids.map(bid => ({ ...bid, timestamp: bid.timestamp.getTime ? bid.timestamp.getTime() : bid.timestamp }))
         };
 
-        const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
+        const intermissionDuration = 30;
         const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
         await updateLeagueInFirestore({
@@ -1738,12 +1751,25 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             rebidInfo: null,
         });
         setBidAmount(0);
+    };
 
-    }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount, REQUIRED_ROSTER_SPOTS]);
+    const handleConfirmAssignment = async (playerId, assignedSpot) => {
+        const team = currentLeague.teams.find(t => t.id === userId);
+        if (!team) return;
 
+        const updatedRoster = team.roster.map(p => 
+            p.playerId === playerId ? { ...p, assignedSpot } : p
+        );
 
+        const updatedTeams = currentLeague.teams.map(t => 
+            t.id === userId ? { ...t, roster: updatedRoster } : t
+        );
+        
+        await updateLeagueInFirestore({ teams: updatedTeams });
 
- 
+        setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
+    };
+
     const handleRebidEnd = useCallback(async () => {
         if (currentLeague.status !== 'rebidding' || currentLeague.isPaused) return;
 
@@ -1792,7 +1818,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             await updateLeagueInFirestore({
                 status: 'tied-bid-resolution',
                 currentPlayerIndex: currentLeague.currentPlayerIndex,
-                tiedBids: tiedRebidders.map(b => ({ bidderId: b.bidderId, amount: b.amount, timestamp: b.timestamp })),
+                tiedBids: tiedRebidders.map(b => ({ bidderId: b.bidderId, amount: b.amount })),
                 currentBid: 0,
                 currentBidderId: null,
                 bidEndTime: null,
@@ -1809,7 +1835,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const winningTeamId = sortedRebids[0].bidderId;
             await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentRebids);
         }
-    }, [currentLeague, updateLeagueInFirestore, setMessageModalContent, setBidAmount,awardPlayerAndContinue]);
+    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount]);
 
 
     const handleBidEnd = useCallback(async () => {
@@ -1853,15 +1879,14 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         const tiedBidders = sortedBids.filter(bid => bid.amount === highestBidAmount);
 
         if (tiedBidders.length > 1) {
-			const rebidDuration = currentLeague.rosterSettings?.rebidDuration || 15; // ADD THIS
-			await updateLeagueInFirestore({
-				status: 'rebidding',
-				currentPlayerIndex: currentLeague.currentPlayerIndex,
-				rebidInfo: {
-					originalTiedAmount: highestBidAmount,
-					tiedTeamIds: tiedBidders.map(b => b.bidderId),
-					rebidEndTime: new Date(Date.now() + rebidDuration * 1000) // CHANGE THIS
-				},
+            await updateLeagueInFirestore({
+                status: 'rebidding',
+                currentPlayerIndex: currentLeague.currentPlayerIndex,
+                rebidInfo: {
+                    originalTiedAmount: highestBidAmount,
+                    tiedTeamIds: tiedBidders.map(b => b.bidderId),
+                    rebidEndTime: new Date(Date.now() + REBID_DURATION * 1000)
+                },
                 currentBid: 0,
                 currentBidderId: null,
                 bidEndTime: null,
@@ -1878,14 +1903,14 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
             const winningTeamId = sortedBids[0].bidderId;
             await awardPlayerAndContinue(player, winningTeamId, winningBid, allCurrentBids);
         }
-    }, [currentLeague, updateLeagueInFirestore, setMessageModalContent, setBidAmount,awardPlayerAndContinue]);
+    }, [currentLeague, updateLeagueInFirestore, userId, setMessageModalContent, setBidAmount, REBID_DURATION]);
 
 
     const handleAutoNominateNextPlayer = useCallback(async () => {
         const nextRandomPlayerIndex = getRandomAvailablePlayerIndex(currentLeague.players);
 
         if (nextRandomPlayerIndex !== null) {
-            const bidDuration = currentLeague.rosterSettings?.bidDuration || 20;
+            const bidDuration = 20;
             const bidEndTime = new Date(Date.now() + bidDuration * 1000);
 
             await updateLeagueInFirestore({
@@ -1935,51 +1960,30 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     }, [currentLeague, updateLeagueInFirestore]);
 
 	useEffect(() => {
-        if (!db || !isAuthReady || !currentLeague.id) return;
+			if (!db || !isAuthReady || !currentLeague.id) return;
 
-        const leagueDocRef = doc(db, `artifacts/${appId}/public/data/leagues`, currentLeague.id);
-        const unsubscribe = onSnapshot(leagueDocRef, (docSnapshot) => {
-            if (docSnapshot.exists()) {
-                const updatedLeagueData = { id: docSnapshot.id, ...docSnapshot.data() };
-                setCurrentLeague(updatedLeagueData);
+			const leagueDocRef = doc(db, `artifacts/${appId}/public/data/leagues`, currentLeague.id);
+			const unsubscribe = onSnapshot(leagueDocRef, (docSnapshot) => {
+				if (docSnapshot.exists()) {
+					const updatedLeagueData = { id: docSnapshot.id, ...docSnapshot.data() };
+					setCurrentLeague(updatedLeagueData);
 
-                // NEW: Added a console log to help verify Firestore updates
-                console.log("onSnapshot received updated league data:", updatedLeagueData);
-
-                const newLastDrafted = updatedLeagueData.lastDraftedPlayerInfo;
-                if (newLastDrafted && newLastDrafted.winningTeam.id === userId && newLastDrafted.player.id !== lastProcessedPlayerId.current) {
-                    lastProcessedPlayerId.current = newLastDrafted.player.id;
-                    // REMOVED: The manual assignment modal is no longer used.
-                }
-            } else {
-                onBackToLeagueDetails();
-            }
-        });
-        return () => unsubscribe();
-    }, [db, isAuthReady, currentLeague.id, onBackToLeagueDetails, appId, userId]);useEffect(() => {
-        if (!db || !isAuthReady || !currentLeague.id) return;
-
-        const leagueDocRef = doc(db, `artifacts/${appId}/public/data/leagues`, currentLeague.id);
-        const unsubscribe = onSnapshot(leagueDocRef, (docSnapshot) => {
-            if (docSnapshot.exists()) {
-                const updatedLeagueData = { id: docSnapshot.id, ...docSnapshot.data() };
-                // FIX: Use spread operator to force a new object reference, ensuring re-render.
-                setCurrentLeague({...updatedLeagueData});
-
-                // NEW: Updated log message for better debugging
-                const userTeamData = updatedLeagueData.teams.find(t => t.id === userId);
-                console.log("onSnapshot received updated league data. User's roster length:", userTeamData?.roster.length, "Budget:", userTeamData?.budget);
-
-                const newLastDrafted = updatedLeagueData.lastDraftedPlayerInfo;
-                if (newLastDrafted && newLastDrafted.winningTeam.id === userId && newLastDrafted.player.id !== lastProcessedPlayerId.current) {
-                    lastProcessedPlayerId.current = newLastDrafted.player.id;
-                }
-            } else {
-                onBackToLeagueDetails();
-            }
-        });
-        return () => unsubscribe();
-    }, [db, isAuthReady, currentLeague.id, onBackToLeagueDetails, appId, userId]);
+					// Logic to trigger the assignment modal for the winning user
+					const newLastDrafted = updatedLeagueData.lastDraftedPlayerInfo;
+					if (newLastDrafted && newLastDrafted.winningTeam.id === userId && newLastDrafted.player.id !== lastProcessedPlayerId.current) {
+						lastProcessedPlayerId.current = newLastDrafted.player.id;
+						const userTeam = updatedLeagueData.teams.find(t => t.id === userId);
+						const rosteredPlayer = userTeam.roster.find(p => p.playerId === newLastDrafted.player.id);
+						if (rosteredPlayer && rosteredPlayer.assignedSpot === 'UNASSIGNED') {
+							setPlayersToAssign(prev => [...prev, newLastDrafted.player]);
+						}
+					}
+				} else {
+					onBackToLeagueDetails();
+				}
+			});
+			return () => unsubscribe();
+		}, [db, isAuthReady, currentLeague.id, onBackToLeagueDetails, appId, userId]);
 		
     useEffect(() => {
         if (currentLeague.status === 'drafting' && !currentLeague.isPaused && currentLeague.bidEndTime) {
@@ -2059,6 +2063,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         }
     }, [currentLeague.status, currentLeague.isPaused, currentLeague.rebidInfo?.rebidEndTime, handleRebidEnd]);
 
+
     useEffect(() => {
         if (currentLeague.currentPlayerIndex !== null) {
             const myLastBid = currentLeague.activePlayerBids?.[userId]?.amount || 0;
@@ -2068,48 +2073,9 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         }
     }, [currentLeague.currentPlayerIndex, currentLeague.activePlayerBids, userId]);
 
-	useEffect(() => {
-			// Don't run if not authenticated
-			if (!isAuthReady || !userId) return;
-
-			// This function is defined once, but gets fresh data from the ref
-			const updatePresence = (isOnline) => {
-				const currentLeagueData = leagueRef.current;
-				const userTeamInRef = currentLeagueData.teams.find(t => t.id === userId);
-
-				// Check if the user is on a team inside the function
-				if (userTeamInRef) {
-					const teamIndex = currentLeagueData.teams.findIndex(t => t.id === userId);
-					const updatedTeams = [...currentLeagueData.teams];
-					updatedTeams[teamIndex] = {
-						...updatedTeams[teamIndex],
-						isOnline: isOnline,
-						lastSeen: new Date(),
-					};
-					updateLeagueInFirestore({ teams: updatedTeams });
-				}
-			};
-
-			// Set initial online status
-			updatePresence(true);
-
-			// This interval will now run every 30 seconds without issue
-			const intervalId = setInterval(() => {
-				updatePresence(true);
-			}, 30000);
-
-			// This cleanup function runs when the user leaves the page
-			return () => {
-				clearInterval(intervalId);
-				updatePresence(false);
-			};
-		// This stable dependency array ensures the effect only runs once
-		}, [isAuthReady, userId, updateLeagueInFirestore,currentLeague.teams]);
-
-
 
     const handleStartDraft = async () => {
-        if ((currentLeague.status === 'pending' || currentLeague.status === 'lobby') && isLeagueAdmin) {
+        if (currentLeague.status === 'pending' && isLeagueAdmin) {
             const randomPlayerIndex = getRandomAvailablePlayerIndex(currentLeague.players);
 
             if (randomPlayerIndex !== null) {
@@ -2212,24 +2178,22 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         });
 
         const currentRosterSize = currentTeam.roster.length;
-		const totalRosterSpotsConfigured = Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
+        const totalRosterSpotsConfigured = Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
 
-		const remainingRosterSpots = totalRosterSpotsConfigured - currentRosterSize;
+        const remainingRosterSpots = totalRosterSpotsConfigured - currentRosterSize;
 
-		// Correct logic for maximum allowed bid
-		const minimumBudgetRequiredForRemainingSpots = Math.max(0, remainingRosterSpots - 1);
-		const maxBidAllowed = currentTeam.budget - minimumBudgetRequiredForRemainingSpots;
+        const minimumBudgetRequiredForRemainingSpots = Math.max(0, remainingRosterSpots - 1);
+        const maxBidAllowed = currentTeam.budget - minimumBudgetRequiredForRemainingSpots;
 
-		if (bidValue > maxBidAllowed) {
-			setMessageModalContent(`Your bid of $${bidValue} is too high. You must reserve at least $1 for each of your remaining ${remainingRosterSpots} roster spots. Your maximum allowed bid for this player is $${maxBidAllowed}.`);
-			return;
-		}
+        if (bidValue > maxBidAllowed) {
+            setMessageModalContent(`Your bid of $${bidValue} is too high. You must reserve at least $1 for each of your remaining ${remainingRosterSpots} roster spots. Your maximum allowed bid for this player is $${maxBidAllowed}.`);
+            return;
+        }
 
-		if (bidValue > currentTeam.budget) {
-			setMessageModalContent("You do not have enough budget for this bid.");
-			return;
-		}
-
+        if (bidValue > currentTeam.budget) {
+            setMessageModalContent("You do not have enough budget for this bid.");
+            return;
+        }
 
         const newActivePlayerBids = {
             ...(currentLeague.activePlayerBids || {}),
@@ -2288,7 +2252,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         if (currentLeague.status === 'intermission') {
             // If in intermission, skip directly to auto-nominate
             handleAutoNominateNextPlayer();
-        } else if (currentLeague.status === 'drafting' || currentLeague.status === 'rebidding' || currentLeague.status === 'tied-bid-resolution') {
+        } else if (currentLeague.status === 'drafting' || currentLeague.status === 'rebidding') {
             // If in drafting or rebidding, skip current player
             let updatedPlayers = [...currentLeague.players];
             let playerToUpdate = null;
@@ -2370,51 +2334,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         });
         setMessageModalContent(`Successfully undid the last pick: ${draftedPlayer.name} has been returned to available players and ${originalWinningTeam.name}'s budget has been refunded.`);
     };
-		
-		const handleSetBeerDuty = async (teamId) => {
-		await updateLeagueInFirestore({ beerDutyTeamId: teamId, beerRequests: [] });
-		setShowBeerDutyModal(false);
-	};
-
-	// ADDED FUNCTION
-	const handleRequestBeer = async () => {
-		const FIVE_MINUTES = 5 * 60 * 1000;
-		const now = Date.now();
-
-		const lastRequestTime = parseInt(localStorage.getItem(`lastBeerRequest_${currentLeague.id}_${userId}`) || '0', 10);
-
-		if (now - lastRequestTime < FIVE_MINUTES) {
-			const timeLeft = Math.ceil((FIVE_MINUTES - (now - lastRequestTime)) / 1000 / 60);
-			setMessageModalContent(`You can request a beer again in about ${timeLeft} minutes.`);
-			return;
-		}
-
-		const newRequest = { requesterId: userId, timestamp: new Date() };
-		const updatedRequests = [...(currentLeague.beerRequests || []), newRequest];
-		await updateLeagueInFirestore({ beerRequests: updatedRequests });
-        setLastBeerRequest(now); // This was missing in your paste, ensures state updates
-		localStorage.setItem(`lastBeerRequest_${currentLeague.id}_${userId}`, now.toString());
-		setMessageModalContent('Your beer request has been sent!');
-	};
-
-	// ADDED useEffect
-	useEffect(() => {
-		if (currentLeague.beerDutyTeamId === userId && currentLeague.beerRequests?.length > 0) {
-			const myLastRequestTimestamp = localStorage.getItem(`lastNotifiedBeerRequest_${currentLeague.id}`) || 0;
-			const latestRequest = currentLeague.beerRequests[currentLeague.beerRequests.length - 1];
-			
-			const latestRequestTimestamp = latestRequest.timestamp.toDate ? latestRequest.timestamp.toDate().getTime() : new Date(latestRequest.timestamp).getTime();
-
-			if (latestRequestTimestamp > myLastRequestTimestamp) {
-				const requesterTeam = currentLeague.teams.find(t => t.id === latestRequest.requesterId);
-				if (requesterTeam) {
-					setMessageModalContent(`🍺 ${requesterTeam.name} has requested a beer!`);
-					localStorage.setItem(`lastNotifiedBeerRequest_${currentLeague.id}`, latestRequestTimestamp.toString());
-				}
-			}
-		}
-	}, [currentLeague.beerRequests, currentLeague.beerDutyTeamId, userId, currentLeague.id,currentLeague.teams]);
-	
 
     const handleKickMember = async (memberIdToKick) => {
         if (!isLeagueAdmin || memberIdToKick === userId) {
@@ -2510,80 +2429,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         await awardPlayerAndContinue(player, winningTeamId, winningBidAmount, currentLeague.tiedBids);
         setMessageModalContent(`Tie resolved! ${player.name} awarded to ${winningTeamId} for $${winningBidAmount}.`);
     };
-	
-	// ADDED: Function to manually end the draft
-    const handleCompleteDraft = async () => {
-        if (!isLeagueAdmin) return;
-
-        // This logic is similar to when the draft ends naturally
-        await updateLeagueInFirestore({
-            status: 'completed',
-            currentPlayerIndex: null,
-            currentBid: 0,
-            currentBidderId: null,
-            bidEndTime: null,
-            intermissionEndTime: null,
-            isPaused: false,
-            pausedAtRemainingTime: null,
-            activePlayerBids: {},
-            lastDraftedPlayerInfo: null,
-            rebidInfo: null,
-            // This is the crucial part that saves the results
-            lastCompletedDraft: {
-                year: new Date().getFullYear(),
-                teams: currentLeague.teams.map(team => ({
-                    ...team,
-                    roster: team.roster.map(rosterPlayer => {
-                        const fullPlayer = currentLeague.players.find(p => p.id === rosterPlayer.playerId);
-                        return {
-                            playerId: rosterPlayer.playerId,
-                            price: rosterPlayer.price,
-                            name: fullPlayer ? fullPlayer.name : 'Unknown Player',
-                            position: fullPlayer ? fullPlayer.position : 'N/A'
-                        };
-                    })
-                })),
-                rosterSettings: currentLeague.rosterSettings,
-                completedAt: new Date(),
-            }
-        });
-        setMessageModalContent("The draft has been manually completed by the admin.");
-    };
-	
-	// ADDED: Function to export draft results to a CSV file
-    const handleExportResults = () => {
-        // Use lastCompletedDraft if it exists, otherwise use current league state
-        const resultsSource = currentLeague.lastCompletedDraft || { teams: currentLeague.teams };
-        
-        if (!resultsSource.teams || resultsSource.teams.length === 0) {
-            setMessageModalContent("No draft results to export.");
-            return;
-        }
-
-        let csvContent = "Team Name,Player Name,Position,Price\r\n";
-
-        resultsSource.teams.forEach(team => {
-            const teamName = team.name.replace(/,/g, ""); // Remove commas from team name to prevent CSV issues
-            if (team.roster && team.roster.length > 0) {
-                team.roster.forEach(player => {
-                    const playerName = player.name.replace(/,/g, "");
-                    csvContent += `${teamName},${playerName},${player.position},${player.price}\r\n`;
-                });
-            }
-        });
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `${currentLeague.name}_DraftResults_${new Date().getFullYear()}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    };
 
 
     const handleIncrementBid = () => {
@@ -2648,375 +2493,96 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     const allPositions = [...new Set(currentLeague.players.map(p => p.position))].sort();
 
 
-    // This is the new, complete return statement for DraftScreen
-	return (
-		<div className="container mx-auto p-4 font-inter bg-white rounded-lg shadow-md">
-			<h2 className="text-2xl font-bold mb-4 text-gray-800">Drafting in {currentLeague.name}</h2>
-			<p className="text-gray-700 mb-6">League Status: <span className="font-semibold text-blue-600">{currentLeague.status.toUpperCase()}</span></p>
+    return (
+        <div className="container mx-auto p-4 font-inter bg-white rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Drafting in {currentLeague.name}</h2>
+            <p className="text-gray-700 mb-6">League Status: <span className="font-semibold text-blue-600">{currentLeague.status.toUpperCase()}</span></p>
 
-			{/* 1. DRAFT CONTROLS & OVERVIEW */}
-			<div className="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
-				<h3 className="text-xl font-semibold mb-4 text-gray-800">Draft Controls & Overview</h3>
-				{isLeagueAdmin && (currentLeague.status === 'pending' || currentLeague.status === 'lobby') && (
+            {isLeagueAdmin && currentLeague.status === 'pending' && (
                 <button
                     onClick={handleStartDraft}
                     className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-lg mb-6"
                     disabled={availablePlayers.length === 0}
                 >
                     Start Draft
-                 </button>
-				)}
-				{isLeagueAdmin && (currentLeague.status === 'drafting' || currentLeague.status === 'intermission' || currentLeague.status === 'pending' || currentLeague.status === 'tied-bid-resolution' || currentLeague.status === 'rebidding') && (
-					<div className="flex flex-wrap gap-3 mb-6">
-						<button
-							onClick={handlePauseResumeDraft}
-							className={`font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md ${currentLeague.isPaused ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-orange-500 hover:bg-orange-600'} text-white`}
-						>
-							{currentLeague.isPaused ? 'Resume Draft' : 'Pause Draft'}
-						</button>
-						<button
-							onClick={handleSkip}
-							className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
-							disabled={!isLeagueAdmin || currentLeague.isPaused || currentLeague.status === 'tied-bid-resolution'}
-						>
-							{currentLeague.status === 'intermission' ? 'Skip Intermission' : 'Skip Player'}
-						</button>
-						{isLeagueAdmin && currentLeague.isPaused && availablePlayers.length > 0 && (
-							<button
-								onClick={() => setShowNominatePlayerModal(true)}
-								className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-lg"
-							>
-								{currentLeague.status === 'intermission' ? 'Nominate Player (Override Intermission)' : 'Nominate Player'}
-							</button>
-						)}
-						{isLeagueAdmin && (
-							<>
-								<button
-									onClick={() => setShowManageMembersModal(true)}
-									className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-lg"
-								>
-									Manage Members
-								</button>
-								
-								<button
-									onClick={() => setShowBeerDutyModal(true)}
-									className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 px-4 rounded-md ...">
-									Beer B!tch
-								</button>
-							</>
-						)}
-						{isLeagueAdmin && currentLeague.lastDraftedPlayerInfo && (
-							<button
-								onClick={handleUndoLastPick}
-								className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
-							>
-								Undo Last Pick
-							</button>
+                </button>
+            )}
 
-						)}
-						{isLeagueAdmin && currentLeague.status !== 'completed' && (
-							 <button
-								onClick={() => setMessageModalContent({
-									title: "Confirm End Draft",
-									message: "Are you sure you want to manually end the draft? This action cannot be undone.",
-									onConfirm: () => handleCompleteDraft(),
-									onCancel: () => setMessageModalContent(null)
-								})}
-								className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md"
-							>
-								Complete Draft
-							</button>
-						)}						
-					</div>
-				)}
-			</div>
-			
-			{/* ADDED: BEER DUTY DISPLAY AND BUTTON */}
-			{currentLeague.beerDutyTeamId && (
-				<div className="text-center my-4 p-3 bg-yellow-100 rounded-lg border border-yellow-300">
-					<p className="font-semibold text-yellow-800">
-						🍺 Beer Duty: {currentLeague.teams.find(t => t.id === currentLeague.beerDutyTeamId)?.name || 'Unknown'}
-					</p>
-					{userId !== currentLeague.beerDutyTeamId && (
-						<button
-							onClick={handleRequestBeer}
-							className="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-md text-sm shadow-md"
-						>
-							Request a Beer
-						</button>
-					)}
-				</div>
-			)}
-
-			{/* 2. PLAYER BIDDING & STATUS AREA (MOVED UP) */}
-			{(currentLeague.status === 'drafting' || currentLeague.status === 'rebidding') && (
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-					<div className="bg-gray-50 p-6 rounded-lg shadow-inner">
-						{currentLeague.lastDraftedPlayerInfo && (
-							<div className="text-center bg-green-100 p-4 rounded-md mb-4 border border-green-300">
-								<h3 className="text-xl font-bold text-green-700 mb-2">LAST PICK!</h3>
-								<div className="flex items-center justify-center space-x-2 text-lg text-gray-800">
-									{currentLeague.lastDraftedPlayerInfo.winningTeam.profilePicture && (
-										<img src={currentLeague.lastDraftedPlayerInfo.winningTeam.profilePicture} alt={`${currentLeague.lastDraftedPlayerInfo.winningTeam.name} profile`} className="w-16 h-16 rounded-full object-cover" />
-									)}
-									<p>
-										<span className="font-semibold">{currentLeague.lastDraftedPlayerInfo.player.name}</span> was drafted by{' '}
-										<span className="font-semibold">{currentLeague.lastDraftedPlayerInfo.winningTeam.name}</span> for{' '}
-										<span className="font-bold text-green-800">${currentLeague.lastDraftedPlayerInfo.price}</span>!
-									</p>
-								</div>
-							</div>
-						)}
-
-						<h3 className="text-xl font-semibold mb-4 text-gray-800">
-							{currentLeague.status === 'rebidding' ? 'Rebid Phase for:' : 'Current Player Up for Bid:'}
-						</h3>
-						{currentPlayer ? (
-							<>
-								<div className="flex items-center space-x-4 mb-4">
-									<img
-										src={currentPlayer.image}
-										alt={currentPlayer.name}
-										className="w-24 h-24 rounded-full object-cover border-2 border-blue-400"
-										onError={(e) => e.target.src = `https://placehold.co/100x100/CCCCCC/000000?text=${currentPlayer.name.charAt(0)}`}
-									/>
-									<div>
-										<p className="text-2xl font-bold text-gray-900">{currentPlayer.name}</p>
-										<p className="text-lg text-gray-600">{currentPlayer.position} - {currentPlayer.team}</p>
-										<p className="text-md text-gray-500">Rank: {currentPlayer.rank}</p>
-									</div>
-								</div>
-								<div className="mb-4">
-									{currentLeague.status === 'rebidding' ? (
-										<p className="text-lg font-medium text-gray-700">Rebid Ends In: <span className="text-red-600 font-bold text-2xl">{rebidTime}s</span></p>
-									) : (
-										<p className="text-lg font-medium text-gray-700">Bid Ends In: <span className="text-red-600 font-bold text-2xl">{remainingTime}s</span></p>
-									)}
-								</div>
-
-								{currentLeague.status === 'rebidding' && currentLeague.rebidInfo && (
-									<div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-3 rounded-md mb-4">
-										<p className="font-semibold">Original Tied Bid: ${currentLeague.rebidInfo.originalTiedAmount}</p>
-										<p className="text-sm">Minimum rebid: ${currentLeague.rebidInfo.originalTiedAmount + 1}</p>
-										{currentHighestRebid > 0 && (
-											<p className="text-sm">Current highest rebid: ${currentHighestRebid}</p>
-										)}
-									</div>
-								)}
-
-								{userTeam && (currentLeague.status === 'drafting' || isUserTiedBidder) ? (
-									<div className="flex flex-col gap-4">
-										<div className="flex items-center space-x-2">
-											<label htmlFor="bidInput" className="block text-gray-700 font-medium">Your Bid ($):</label>
-											<button
-												onClick={handleDecrementBid}
-												className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-2 rounded-md shadow-sm text-sm"
-												disabled={bidAmount <= 0 || (currentLeague.status === 'rebidding' && bidAmount <= minBidForCurrentUser && bidAmount !== 0)}
-											>
-												-
-											</button>
-											<input
-												type="number"
-												id="bidInput"
-												className="w-24 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
-												value={bidAmount}
-												onChange={(e) => {
-													const value = parseInt(e.target.value) || 0;
-													setBidAmount(value);
-													handlePlaceBid(value);
-												}}
-												min={currentLeague.status === 'rebidding' ? minBidForCurrentUser : 0}
-												step="1"
-											/>
-											<button
-												onClick={handleIncrementBid}
-												className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-2 rounded-md shadow-sm text-sm"
-											>
-												+
-											</button>
-										</div>
-										<div className="text-gray-700">
-											<p>Your Budget: <span className="font-bold">${userTeam.budget}</span></p>
-											{(() => {
-												const remainingRosterSpotsForCalc = TOTAL_REQUIRED_ROSTER_SLOTS - userTeam.roster.length;
-												const maxBid = userTeam.budget - Math.max(0, remainingRosterSpotsForCalc - 1);
-												return (
-													<p className="text-sm text-gray-600">
-														Max Bid for Next Player: <span className="font-semibold">${maxBid}</span> <span className="text-gray-500">(to fill all spots)</span>
-													</p>
-												);
-											})()}
-										</div>
-
-										<div className="mt-4 border-t pt-4 border-gray-200">
-											<h4 className="text-lg font-semibold mb-2 text-gray-800">Quick Bid Option:</h4>
-											<div className="flex items-center space-x-2">
-												<label htmlFor="quickBid1Input" className="sr-only">Quick Bid Amount</label>
-												<input
-													type="number"
-													id="quickBid1Input"
-													className="w-24 p-2 border border-gray-300 rounded-md text-sm"
-													value={quickBid1}
-													onChange={(e) => setQuickBid1(parseInt(e.target.value) || 0)}
-													min="0"
-													step="1"
-												/>
-												<button
-													onClick={() => handlePlaceBid(quickBid1)}
-													className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-3 rounded-md text-sm shadow-md"
-													disabled={!userTeam || quickBid1 < minBidForCurrentUser || quickBid1 > userTeam.budget}
-												>
-													Bid ${quickBid1}
-												</button>
-											</div>
-										</div>
-										<div className="mt-4">
-											<button
-												onClick={handleCancelBid}
-												className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
-												disabled={!userTeam || bidAmount === 0}
-											>
-												Cancel Bid
-											</button>
-										</div>
-									</div>
-								) : (
-									<p className="text-gray-600 italic">
-										{currentLeague.status === 'rebidding' ? "Only tied teams can rebid in this round." : "Bidding is not active for your team right now."}
-									</p>
-								)}
-							</>
-						) : (
-							<div className="text-center p-4">
-								<p className="text-gray-600 text-lg mb-4">No player currently up for auction.</p>
-								{isLeagueAdmin ? (
-									<p className="text-gray-700 font-semibold">Admin: Nominate a player to continue the draft.</p>
-								) : (
-									<p className="text-gray-700 font-semibold">Waiting for the admin to nominate the next player...</p>
-								)}
-							</div>
-						)}
-					</div>
-				</div>
-			)}
-
-			{currentLeague.status === 'intermission' && (
-				<div className="text-center p-8 bg-blue-50 rounded-lg shadow-md mb-6">
-					<h3 className="text-3xl font-bold text-blue-700 mb-4">Intermission!</h3>
-					<p className="text-lg text-gray-700">Next player in: <span className="font-bold text-blue-800 text-2xl">{intermissionTime}s</span></p>
-					<p className="text-gray-600 mt-2">Get ready for the next auction!</p>
-					{currentLeague.lastDraftedPlayerInfo && (
-						<div className="mt-6 bg-green-100 p-4 rounded-md border border-green-300">
-							<h4 className="text-xl font-bold text-green-700 mb-2">Last Player Drafted:</h4>
-							<div className="flex items-center justify-center space-x-2 text-lg text-gray-800">
-								{currentLeague.lastDraftedPlayerInfo.winningTeam.profilePicture && (
-									<img src={currentLeague.lastDraftedPlayerInfo.winningTeam.profilePicture} alt={`${currentLeague.lastDraftedPlayerInfo.winningTeam.name} profile`} className="w-16 h-16 rounded-full object-cover" />
-								)}
-								<p>
-									<span className="font-semibold">{currentLeague.lastDraftedPlayerInfo.player.name}</span> was drafted by{' '}
-									<span className="font-semibold">{currentLeague.lastDraftedPlayerInfo.winningTeam.name}</span> for{' '}
-									<span className="font-bold text-green-800">${currentLeague.lastDraftedPlayerInfo.price}</span>!
-								</p>
-							</div>
-							{currentLeague.lastDraftedPlayerInfo.bidHistory && currentLeague.lastDraftedPlayerInfo.bidHistory.length > 0 && (
-								<div className="mt-4 text-left">
-									<p className="font-semibold text-gray-700">All Bids:</p>
-									<ul className="list-disc list-inside text-gray-600">
-										{currentLeague.lastDraftedPlayerInfo.bidHistory
-											.sort((a, b) => b.amount - a.amount || a.timestamp - b.timestamp)
-											.map((bid, index) => {
-												const bidderTeam = currentLeague.teams.find(t => t.id === bid.bidderId);
-												return (
-													<li key={index}>
-														{bidderTeam ? bidderTeam.name : `User ${bid.bidderId.substring(0, 4)}...`}: ${bid.amount}
-													</li>
-												);
-											})}
-									</ul>
-								</div>
-							)}
-						</div>
-					)}
-				</div>
-			)}
-
-			{currentLeague.status === 'tied-bid-resolution' && currentPlayer && (
-				<div className="text-center p-8 bg-yellow-50 rounded-lg shadow-md border border-yellow-300 mb-6">
-					<h3 className="text-3xl font-bold text-yellow-800 mb-4">Tie Detected!</h3>
-					<p className="text-lg text-gray-700 mb-4">
-						Multiple teams bid <span className="font-bold text-yellow-900">${currentLeague.tiedBids[0].amount}</span> for <span className="font-semibold">{currentPlayer.name}</span>.
-					</p>
-					{isLeagueAdmin ? (
-						<div className="mt-6">
-							<p className="text-xl font-semibold text-gray-800 mb-3">Admin: Select a winning team:</p>
-							<div className="flex flex-wrap justify-center gap-4">
-								{currentLeague.tiedBids.map(tiedBid => {
-									const team = currentLeague.teams.find(t => t.id === tiedBid.bidderId);
-									return team ? (
-										<button
-											key={team.id}
-											onClick={() => handleResolveTie(team.id)}
-											className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-lg"
-										>
-											Award to {team.name} (${tiedBid.amount})
-										</button>
-									) : null;
-								})}
-							</div>
-							<button
-								onClick={() => handleSkip()}
-								className="mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
-							>
-								Skip Player (Discard Bids)
-							</button>
-						</div>
-					) : (
-						<p className="text-gray-700 font-semibold">Waiting for the admin to resolve the tie...</p>
-					)}
-				</div>
-			)}
-
-			{/* 3. LEAGUE TEAMS LIST (MOVED) */}
-			{/* 3. LEAGUE TEAMS LIST */}
             <div className="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">Draft Controls & Overview</h3>
+                {isLeagueAdmin && (currentLeague.status === 'drafting' || currentLeague.status === 'intermission' || currentLeague.status === 'pending' || currentLeague.status === 'tied-bid-resolution' || currentLeague.status === 'rebidding') && (
+                    <div className="flex flex-wrap gap-3 mb-6">
+                        <button
+                            onClick={handlePauseResumeDraft}
+                            className={`font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md ${currentLeague.isPaused ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-orange-500 hover:bg-orange-600'} text-white`}
+                        >
+                            {currentLeague.isPaused ? 'Resume Draft' : 'Pause Draft'}
+                        </button>
+                        <button
+                            onClick={handleSkip}
+                            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
+                            disabled={!isLeagueAdmin || currentLeague.isPaused || currentLeague.status === 'tied-bid-resolution'}
+                        >
+                            {currentLeague.status === 'intermission' ? 'Skip Intermission' : 'Skip Player'}
+                        </button>
+                        {isLeagueAdmin && currentLeague.isPaused && availablePlayers.length > 0 && (
+                            <button
+                                onClick={() => setShowNominatePlayerModal(true)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-lg"
+                            >
+                                {currentLeague.status === 'intermission' ? 'Nominate Player (Override Intermission)' : 'Nominate Player'}
+                            </button>
+                        )}
+                        {isLeagueAdmin && (
+                            <button
+                                onClick={() => setShowManageMembersModal(true)}
+                                className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-lg"
+                            >
+                                Manage Members
+                            </button>
+                        )}
+                        {isLeagueAdmin && currentLeague.lastDraftedPlayerInfo && (
+                            <button
+                                onClick={handleUndoLastPick}
+                                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
+                            >
+                                Undo Last Pick
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 <h4 className="text-lg font-semibold mb-2 text-gray-800">League Teams:</h4>
                 <ul className="space-y-2">
-                    {/* FIX: Use map to create a new array of list items on each render */}
                     {currentLeague.teams.map(team => {
                         const isMyTeam = team.id === userId;
                         const totalSpent = team.roster.reduce((sum, player) => sum + (player.price || 0), 0);
-                        const assignedCounts = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0, K: 0, FLEX: 0, SUPERFLEX: 0, BENCH: 0 };
-                        const unassignedPlayers = [];
-                        team.roster.forEach(p => {
-                            if (p.assignedSpot && p.assignedSpot !== 'UNASSIGNED') {
-                                assignedCounts[p.assignedSpot]++;
-                            } else {
-                                unassignedPlayers.push(p);
-                            }
-                        });
-                        const filledSpots = { ...assignedCounts };
-                        const remainingRosterSpots = TOTAL_REQUIRED_ROSTER_SLOTS - team.roster.length;
-                        const maxBidForThisPlayer = team.budget - Math.max(0, remainingRosterSpots - 1);
+
+                        // --- Roster Spot Calculation Logic ---
+						const assignedCounts = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0, K: 0, FLEX: 0, SUPERFLEX: 0, BENCH: 0 };
+						const unassignedPlayers = [];
+
+						team.roster.forEach(p => {
+							if (p.assignedSpot && p.assignedSpot !== 'UNASSIGNED') {
+								assignedCounts[p.assignedSpot]++;
+							} else {
+								unassignedPlayers.push(p);
+							}
+						});
+
+						const filledSpots = { ...assignedCounts };
+						const remainingRosterSpots = TOTAL_REQUIRED_ROSTER_SLOTS - team.roster.length;
+						const budgetPerRemainingSpot = remainingRosterSpots > 0 ? (team.budget / remainingRosterSpots).toFixed(2) : 0;
+
+
                         return (
                             <li key={team.id} className="bg-white p-3 rounded-md shadow-sm border border-gray-200">
                                 <p className="font-medium text-gray-800 flex items-center">
-                                    {(() => {
-                                        const TWO_MINUTES_AGO = Date.now() - (2 * 60 * 1000);
-                                        const lastSeenTime = team.lastSeen?.toDate ? team.lastSeen.toDate().getTime() : 0;
-                                        const isConsideredOnline = team.isOnline && lastSeenTime > TWO_MINUTES_AGO;
-                                        
-                                        return (
-                                            <span
-                                                className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${isConsideredOnline ? 'bg-green-500' : 'bg-red-500'}`}
-                                                title={isConsideredOnline ? 'Online' : 'Offline'}
-                                            ></span>
-                                        );
-                                    })()}
                                     {team.profilePicture && (
                                         <img src={team.profilePicture} alt={`${team.name} profile`} className="w-8 h-8 rounded-full object-cover mr-2" />
                                     )}
                                     {team.name}
-                                    <span className="text-sm text-gray-500 ml-2">({team.id.substring(0, 4)}...)</span>
+                                    <span className="text-sm text-gray-500 ml-2">({team.id.substring(0,4)}...)</span>
                                 </p>
                                 <p className="text-sm text-gray-600">Roster: {team.roster.length} players</p>
                                 {isMyTeam && (
@@ -3025,19 +2591,19 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
                                         <p className="text-sm text-gray-600 font-semibold">Total Spent: ${totalSpent}</p>
                                         {remainingRosterSpots > 0 && (
                                             <p className="text-sm text-gray-600">
-                                                Max Bid for Next Player: <span className="font-semibold">${maxBidForThisPlayer}</span> <span className="text-gray-500">(to fill all spots)</span>
+                                                Avg. Budget Left per Player: <span className="font-semibold">${budgetPerRemainingSpot}</span> <span className="text-gray-500">(for strategic planning)</span>
                                             </p>
                                         )}
                                         <div className="mt-2 text-xs text-gray-700">
                                             <p className="font-semibold">Roster Spots:</p>
                                             <ul className="list-disc list-inside ml-4">
-                                                {Object.entries(filledSpots).map(([pos, count]) => (
-                                                    <li key={pos}>{pos}: {count} / {REQUIRED_ROSTER_SPOTS[pos] || 0}</li>
-                                                ))}
-                                                {unassignedPlayers.length > 0 && (
-                                                    <li>Unassigned: {unassignedPlayers.length}</li>
-                                                )}
-                                            </ul>
+												{Object.entries(filledSpots).map(([pos, count]) => (
+													<li key={pos}>{pos}: {count} / {REQUIRED_ROSTER_SPOTS[pos] || 0}</li>
+												))}
+												{unassignedPlayers.length > 0 && (
+													<li>Unassigned: {unassignedPlayers.length}</li>
+												)}
+											</ul>
                                         </div>
                                         {team.roster.length > 0 && (
                                             <div className="mt-2 text-xs text-gray-500">
@@ -3048,9 +2614,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
                                                         return (
                                                             <li key={idx}>
                                                                 {fullPlayer ? `${fullPlayer.name} (${fullPlayer.position})` : `Unknown Player`} - ${rosterPlayer.price}
-                                                                {rosterPlayer.assignedSpot && rosterPlayer.assignedSpot !== 'UNASSIGNED' && (
-                                                                    <span className="ml-2 text-blue-600 font-medium">({rosterPlayer.assignedSpot})</span>
-                                                                )}
                                                             </li>
                                                         );
                                                     })}
@@ -3063,133 +2626,357 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
                         );
                     })}
                 </ul>
+
+                <div className="mt-6">
+                    <button
+                        onClick={() => setShowAvailablePlayers(!showAvailablePlayers)}
+                        className={`w-full text-left font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md mb-3
+                            ${showAvailablePlayers ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
+                    >
+                        Available Players {showAvailablePlayers ? ' (Collapse)' : ' (Expand)'}
+                    </button>
+                    {showAvailablePlayers && (
+                        <>
+                            <div className="flex items-center space-x-2 mb-3">
+                                <label htmlFor="sortPosition" className="text-gray-700 text-sm font-bold">Sort by Position:</label>
+                                <select
+                                    id="sortPosition"
+                                    className="shadow appearance-none border rounded-md py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value={sortPosition}
+                                    onChange={(e) => setSortPosition(e.target.value)}
+                                >
+                                    <option value="All">All Positions</option>
+                                    {allPositions.map(pos => (
+                                        <option key={pos} value={pos}>{pos}</option>
+                                    ))}
+                                </select>
+                            </div>
+							
+							<div className="mb-3">
+								<input
+									type="text"
+									placeholder="Search available players..."
+									className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+									value={searchTerm}
+									onChange={(e) => setSearchTerm(e.target.value)}
+								/>
+							</div>
+							
+                            <div className="max-h-60 overflow-y-auto bg-white p-3 rounded-md shadow-sm border border-gray-200">
+                                <ul className="space-y-1 text-sm text-gray-700">
+                                    {filteredAndSortedAvailablePlayers.map(p => {
+                                        const isFavorited = isGlobalFavorite(p.id);
+                                        return (
+                                            <li key={p.id} className="flex justify-between items-center">
+                                                <span>{p.name} ({p.position}) - Rank: {p.rank}</span>
+                                                <button
+                                                    onClick={() => toggleGlobalFavorite(p.id)}
+                                                    className={`ml-2 p-1 rounded-full ${isFavorited ? 'text-yellow-500 hover:text-yellow-600' : 'text-gray-400 hover:text-gray-500'}`}
+                                                    title={isFavorited ? "Remove from Favorites" : "Add to Favorites"}
+                                                >
+                                                    {isFavorited ? (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                                                            <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.292-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                                                        </svg>
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321 1.088l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557L3.92 10.91a.562.562 0 0 1 .32-1.088l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                                                        </svg>
+                                                    )}
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                    {filteredAndSortedAvailablePlayers.length === 0 && (
+                                        <li>No players currently available for this position.</li>
+                                    )}
+                                </ul>
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {favoritedAndAvailablePlayers.length > 0 && (
+                    <div className="mt-6 bg-gray-100 p-6 rounded-lg shadow-inner">
+                        <button
+                            onClick={() => setShowFavoritedPlayers(!showFavoritedPlayers)}
+                            className={`w-full text-left font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md mb-3
+                                ${showFavoritedPlayers ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : 'bg-yellow-400 hover:bg-yellow-500 text-white'}`}
+                        >
+                            Your Favorited & Available Players {showFavoritedPlayers ? ' (Collapse)' : ' (Expand)'}
+                        </button>
+                        {showFavoritedPlayers && (
+                            <div className="max-h-60 overflow-y-auto bg-white p-3 rounded-md shadow-sm border border-gray-200">
+                                <ul className="space-y-1 text-sm text-gray-700">
+                                    {favoritedAndAvailablePlayers.map(p => (
+                                        <li key={p.id} className="flex justify-between items-center py-1 border-b border-gray-100 last:border-b-0">
+                                            <span>{p.name} ({p.position}) - Rank: {p.rank}</span>
+                                            <button
+                                                onClick={() => toggleGlobalFavorite(p.id)}
+                                                className="ml-2 p-1 rounded-full text-red-500 hover:text-red-600"
+                                                title="Remove from Favorites"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
-			{/* 4. FAVORITED PLAYERS (MOVED) */}
-			{favoritedAndAvailablePlayers.length > 0 && (
-				<div className="mt-6 bg-gray-100 p-6 rounded-lg shadow-inner">
-					<button
-						onClick={() => setShowFavoritedPlayers(!showFavoritedPlayers)}
-						className={`w-full text-left font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md mb-3 ${showFavoritedPlayers ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : 'bg-yellow-400 hover:bg-yellow-500 text-white'}`}
-					>
-						Your Favorited & Available Players {showFavoritedPlayers ? ' (Collapse)' : ' (Expand)'}
-					</button>
-					{showFavoritedPlayers && (
-						<div className="max-h-60 overflow-y-auto bg-white p-3 rounded-md shadow-sm border border-gray-200">
-							<ul className="space-y-1 text-sm text-gray-700">
-								{favoritedAndAvailablePlayers.map(p => (
-									<li key={p.id} className="flex justify-between items-center py-1 border-b border-gray-100 last:border-b-0">
-										<span>{p.name} ({p.position}) - Rank: {p.rank}</span>
-										<button
-											onClick={() => toggleGlobalFavorite(p.id)}
-											className="ml-2 p-1 rounded-full text-red-500 hover:text-red-600"
-											title="Remove from Favorites"
-										>
-											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-												<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-											</svg>
-										</button>
-									</li>
-								))}
-							</ul>
-						</div>
-					)}
-				</div>
-			)}
 
-			{/* 5. AVAILABLE PLAYERS */}
-			<div className="mt-6">
-				<button
-					onClick={() => setShowAvailablePlayers(!showAvailablePlayers)}
-					className={`w-full text-left font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md mb-3 ${showAvailablePlayers ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
-				>
-					Available Players {showAvailablePlayers ? ' (Collapse)' : ' (Expand)'}
-				</button>
-				{showAvailablePlayers && (
-					<>
-						<div className="flex items-center space-x-2 mb-3">
-							<label htmlFor="sortPosition" className="text-gray-700 text-sm font-bold">Sort by Position:</label>
-							<select
-								id="sortPosition"
-								className="shadow appearance-none border rounded-md py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-								value={sortPosition}
-								onChange={(e) => setSortPosition(e.target.value)}
-							>
-								<option value="All">All Positions</option>
-								{allPositions.map(pos => (
-									<option key={pos} value={pos}>{pos}</option>
-								))}
-							</select>
-						</div>
-						<div className="mb-3">
-							<input
-								type="text"
-								placeholder="Search available players..."
-								className="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-								value={searchTerm}
-								onChange={(e) => setSearchTerm(e.target.value)}
-							/>
-						</div>
-						<div className="max-h-60 overflow-y-auto bg-white p-3 rounded-md shadow-sm border border-gray-200">
-							<ul className="space-y-1 text-sm text-gray-700">
-								{filteredAndSortedAvailablePlayers.map(p => {
-									const isFavorited = isGlobalFavorite(p.id);
-									return (
-										<li key={p.id} className="flex justify-between items-center">
-											<span>{p.name} ({p.position}) - Rank: {p.rank}</span>
-											<button
-												onClick={() => toggleGlobalFavorite(p.id)}
-												className={`ml-2 p-1 rounded-full ${isFavorited ? 'text-yellow-500 hover:text-yellow-600' : 'text-gray-400 hover:text-gray-500'}`}
-												title={isFavorited ? "Remove from Favorites" : "Add to Favorites"}
-											>
-												{isFavorited ? (
-													<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-														<path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.292-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-													</svg>
-												) : (
-													<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-														<path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321 1.088l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557L3.92 10.91a.562.562 0 0 1 .32-1.088l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
-													</svg>
-												)}
-											</button>
-										</li>
-									);
-								})}
-								{filteredAndSortedAvailablePlayers.length === 0 && (
-									<li>No players currently available for this position.</li>
-								)}
-							</ul>
-						</div>
-					</>
-				)}
-			</div>
+            {(currentLeague.status === 'drafting' || currentLeague.status === 'rebidding') && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
+                        {currentLeague.lastDraftedPlayerInfo && (
+                            <div className="text-center bg-green-100 p-4 rounded-md mb-4 border border-green-300">
+                                <h3 className="text-xl font-bold text-green-700 mb-2">LAST PICK!</h3>
+                                <div className="flex items-center justify-center space-x-2 text-lg text-gray-800">
+                                    {currentLeague.lastDraftedPlayerInfo.winningTeam.profilePicture && (
+                                        <img src={currentLeague.lastDraftedPlayerInfo.winningTeam.profilePicture} alt={`${currentLeague.lastDraftedPlayerInfo.winningTeam.name} profile`} className="w-16 h-16 rounded-full object-cover" />
+                                    )}
+                                    <p>
+                                        <span className="font-semibold">{currentLeague.lastDraftedPlayerInfo.player.name}</span> was drafted by{' '}
+                                        <span className="font-semibold">{currentLeague.lastDraftedPlayerInfo.winningTeam.name}</span> for{' '}
+                                        <span className="font-bold text-green-800">${currentLeague.lastDraftedPlayerInfo.price}</span>!
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
-			{currentLeague.status === 'completed' && (
-				<div className="text-center p-8 bg-green-50 rounded-lg shadow-md mt-6">
-					<h3 className="text-3xl font-bold text-green-700 mb-4">Draft Completed!</h3>
-					<button
-                        onClick={handleExportResults}
-                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
-                    >
-                        Export Draft Results
-                    </button>
-				</div>
-			)}
+                        <h3 className="text-xl font-semibold mb-4 text-gray-800">
+                            {currentLeague.status === 'rebidding' ? 'Rebid Phase for:' : 'Current Player Up for Bid:'}
+                        </h3>
+                        {currentPlayer ? (
+                            <>
+                                <div className="flex items-center space-x-4 mb-4">
+                                    <img
+                                        src={currentPlayer.image}
+                                        alt={currentPlayer.name}
+                                        className="w-24 h-24 rounded-full object-cover border-2 border-blue-400"
+                                        onError={(e) => e.target.src = `https://placehold.co/100x100/CCCCCC/000000?text=${currentPlayer.name.charAt(0)}`}
+                                    />
+                                    <div>
+                                        <p className="text-2xl font-bold text-gray-900">{currentPlayer.name}</p>
+                                        <p className="text-lg text-gray-600">{currentPlayer.position} - {currentPlayer.team}</p>
+                                        <p className="text-md text-gray-500">Rank: {currentPlayer.rank}</p>
+                                    </div>
+                                </div>
+                                <div className="mb-4">
+                                    {currentLeague.status === 'rebidding' ? (
+                                        <p className="text-lg font-medium text-gray-700">Rebid Ends In: <span className="text-red-600 font-bold text-2xl">{rebidTime}s</span></p>
+                                    ) : (
+                                        <p className="text-lg font-medium text-gray-700">Bid Ends In: <span className="text-red-600 font-bold text-2xl">{remainingTime}s</span></p>
+                                    )}
+                                </div>
 
-			<button
-				onClick={onBackToLeagueDetails}
-				className="mt-8 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
-			>
-				Back to League Details
-			</button>
+                                {currentLeague.status === 'rebidding' && currentLeague.rebidInfo && (
+                                    <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-3 rounded-md mb-4">
+                                        <p className="font-semibold">Original Tied Bid: ${currentLeague.rebidInfo.originalTiedAmount}</p>
+                                        <p className="text-sm">Minimum rebid: ${currentLeague.rebidInfo.originalTiedAmount + 1}</p>
+                                        {currentHighestRebid > 0 && (
+                                            <p className="text-sm">Current highest rebid: ${currentHighestRebid}</p>
+                                        )}
+                                    </div>
+                                )}
 
-			{showNominatePlayerModal && (
-				<NominatePlayerModal
-					availablePlayers={availablePlayers}
-					onNominate={handleNominatePlayer}
-					onClose={() => setShowNominatePlayerModal(false)}
-				/>
-			)}
+                                {userTeam && (currentLeague.status === 'drafting' || isUserTiedBidder) ? (
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex items-center space-x-2">
+                                            <label htmlFor="bidInput" className="block text-gray-700 font-medium">Your Bid ($):</label>
+                                            <button
+                                                onClick={handleDecrementBid}
+                                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-2 rounded-md shadow-sm text-sm"
+                                                disabled={bidAmount <= 0 || (currentLeague.status === 'rebidding' && bidAmount <= minBidForCurrentUser && bidAmount !==0)}
+                                            >
+                                                -
+                                            </button>
+                                            <input
+                                                type="number"
+                                                id="bidInput"
+                                                className="w-24 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                                                value={bidAmount}
+                                                onChange={(e) => {
+                                                    const value = parseInt(e.target.value) || 0;
+                                                    setBidAmount(value);
+                                                    handlePlaceBid(value);
+                                                }}
+                                                min={currentLeague.status === 'rebidding' ? minBidForCurrentUser : 0}
+                                                step="1"
+                                            />
+                                            <button
+                                                onClick={handleIncrementBid}
+                                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-2 rounded-md shadow-sm text-sm"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                        <div className="text-gray-700">
+                                            <p>Your Budget: <span className="font-bold">${userTeam.budget}</span></p>
+                                            {(() => {
+                                                const remainingRosterSpotsForCalc = TOTAL_REQUIRED_ROSTER_SLOTS - userTeam.roster.length;
+                                                const maxBid = userTeam.budget - Math.max(0, remainingRosterSpotsForCalc - 1);
+                                                return (
+                                                    <p>Your Max Bid for this player: <span className="font-bold">${maxBid}</span></p>
+                                                );
+                                            })()}
+                                        </div>
+
+                                        <div className="mt-4 border-t pt-4 border-gray-200">
+                                            <h4 className="text-lg font-semibold mb-2 text-gray-800">Quick Bid Option:</h4>
+                                            <div className="flex items-center space-x-2">
+                                                <label htmlFor="quickBid1Input" className="sr-only">Quick Bid Amount</label>
+                                                <input
+                                                    type="number"
+                                                    id="quickBid1Input"
+                                                    className="w-24 p-2 border border-gray-300 rounded-md text-sm"
+                                                    value={quickBid1}
+                                                    onChange={(e) => setQuickBid1(parseInt(e.target.value) || 0)}
+                                                    min="0"
+                                                    step="1"
+                                                />
+                                                <button
+                                                    onClick={() => handlePlaceBid(quickBid1)}
+                                                    className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-3 rounded-md text-sm shadow-md"
+                                                    disabled={!userTeam || quickBid1 < minBidForCurrentUser || quickBid1 > userTeam.budget}
+                                                >
+                                                    Bid ${quickBid1}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4">
+                                            <button
+                                                onClick={handleCancelBid}
+                                                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
+                                                disabled={!userTeam || bidAmount === 0}
+                                            >
+                                                Cancel Bid
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-600 italic">
+                                        {currentLeague.status === 'rebidding' ? "Only tied teams can rebid in this round." : "Bidding is not active for your team right now."}
+                                    </p>
+                                )}
+                            </>
+                        ) : (
+                             <div className="text-center p-4">
+                                <p className="text-gray-600 text-lg mb-4">No player currently up for auction.</p>
+                                {isLeagueAdmin ? (
+                                    <p className="text-gray-700 font-semibold">Admin: Nominate a player to continue the draft.</p>
+                                ) : (
+                                    <p className="text-gray-700 font-semibold">Waiting for the admin to nominate the next player...</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {currentLeague.status === 'intermission' && (
+                <div className="text-center p-8 bg-blue-50 rounded-lg shadow-md">
+                    <h3 className="text-3xl font-bold text-blue-700 mb-4">Intermission!</h3>
+                    <p className="text-lg text-gray-700">Next player in: <span className="font-bold text-blue-800 text-2xl">{intermissionTime}s</span></p>
+                    <p className="text-gray-600 mt-2">Get ready for the next auction!</p>
+
+                    {currentLeague.lastDraftedPlayerInfo && (
+                        <div className="mt-6 bg-green-100 p-4 rounded-md border border-green-300">
+                            <h4 className="text-xl font-bold text-green-700 mb-2">Last Player Drafted:</h4>
+                            <div className="flex items-center justify-center space-x-2 text-lg text-gray-800">
+                                {currentLeague.lastDraftedPlayerInfo.winningTeam.profilePicture && (
+                                    <img src={currentLeague.lastDraftedPlayerInfo.winningTeam.profilePicture} alt={`${currentLeague.lastDraftedPlayerInfo.winningTeam.name} profile`} className="w-16 h-16 rounded-full object-cover" />
+                                )}
+                                <p>
+                                    <span className="font-semibold">{currentLeague.lastDraftedPlayerInfo.player.name}</span> was drafted by{' '}
+                                    <span className="font-semibold">{currentLeague.lastDraftedPlayerInfo.winningTeam.name}</span> for{' '}
+                                    <span className="font-bold text-green-800">${currentLeague.lastDraftedPlayerInfo.price}</span>!
+                                </p>
+                            </div>
+                            {currentLeague.lastDraftedPlayerInfo.bidHistory && currentLeague.lastDraftedPlayerInfo.bidHistory.length > 0 && (
+                                <div className="mt-4 text-left">
+                                    <p className="font-semibold text-gray-700">All Bids:</p>
+                                    <ul className="list-disc list-inside text-gray-600">
+                                        {currentLeague.lastDraftedPlayerInfo.bidHistory
+                                            .sort((a, b) => b.amount - a.amount || a.timestamp - b.timestamp)
+                                            .map((bid, index) => {
+                                                const bidderTeam = currentLeague.teams.find(t => t.id === bid.bidderId);
+                                                return (
+                                                    <li key={index}>
+                                                        {bidderTeam ? bidderTeam.name : `User ${bid.bidderId.substring(0,4)}...`}: ${bid.amount}
+                                                    </li>
+                                                );
+                                            })}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {currentLeague.status === 'tied-bid-resolution' && currentPlayer && (
+                <div className="text-center p-8 bg-yellow-50 rounded-lg shadow-md border border-yellow-300">
+                    <h3 className="text-3xl font-bold text-yellow-800 mb-4">Tie Detected!</h3>
+                    <p className="text-lg text-gray-700 mb-4">
+                        Multiple teams bid <span className="font-bold text-yellow-900">${currentLeague.tiedBids[0].amount}</span> for <span className="font-semibold">{currentPlayer.name}</span>.
+                    </p>
+                    {isLeagueAdmin ? (
+                        <div className="mt-6">
+                            <p className="text-xl font-semibold text-gray-800 mb-3">Admin: Select a winning team:</p>
+                            <div className="flex flex-wrap justify-center gap-4">
+                                {currentLeague.tiedBids.map(tiedBid => {
+                                    const team = currentLeague.teams.find(t => t.id === tiedBid.bidderId);
+                                    return team ? (
+                                        <button
+                                            key={team.id}
+                                            onClick={() => handleResolveTie(team.id)}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-lg"
+                                        >
+                                            Award to {team.name} (${tiedBid.amount})
+                                        </button>
+                                    ) : null;
+                                })}
+                            </div>
+                            <button
+                                onClick={() => handleSkip()}
+                                className="mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
+                            >
+                                Skip Player (Discard Bids)
+                            </button>
+                        </div>
+                    ) : (
+                        <p className="text-gray-700 font-semibold">Waiting for the admin to resolve the tie...</p>
+                    )}
+                </div>
+            )}
+
+            {currentLeague.status === 'completed' && (
+                <div className="text-center p-8 bg-green-50 rounded-lg shadow-md">
+                    <h3 className="text-3xl font-bold text-green-700 mb-4">Draft Completed!</h3>
+                    <p className="text-lg text-gray-700">All players have been drafted.</p>
+                </div>
+            )}
+
+            <button
+                onClick={onBackToLeagueDetails}
+                className="mt-8 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-md"
+            >
+                Back to League Details
+            </button>
+
+            {showNominatePlayerModal && (
+                <NominatePlayerModal
+                    availablePlayers={availablePlayers}
+                    onNominate={handleNominatePlayer}
+                    onClose={() => setShowNominatePlayerModal(false)}
+                />
+            )}
 			
 			{showEditBudgetModal && teamToEditBudget && (
 				<EditBudgetModal
@@ -3198,17 +2985,8 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 					onClose={() => setShowEditBudgetModal(false)}
 				/>
 			)}
-			
-			{/* ADDED MODAL CALL */}
-			{showBeerDutyModal && isLeagueAdmin && (
-				<BeerDutyModal
-					league={currentLeague}
-					onSetBeerDuty={handleSetBeerDuty}
-					onClose={() => setShowBeerDutyModal(false)}
-				/>
-			)}
 
-			{showManageMembersModal && (
+            {showManageMembersModal && (
 				<ManageMembersModal
 					league={currentLeague}
 					onClose={() => setShowManageMembersModal(false)}
@@ -3220,29 +2998,40 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 				/>
 			)}
 
-			{messageModalContent && typeof messageModalContent === 'object' && messageModalContent.title === "Confirm Kick" ? (
-				<ConfirmationModal
-					title={messageModalContent.title}
-					message={messageModalContent.message}
-					onConfirm={messageModalContent.onConfirm}
-					onCancel={messageModalContent.onCancel}
-				/>
-			) : messageModalContent && typeof messageModalContent === 'object' && messageModalContent.title === "Confirm Deletion" ? (
-				<ConfirmationModal
-					title={messageModalContent.title}
-					message={messageModalContent.message}
-					onConfirm={messageModalContent.onConfirm}
-					onCancel={messageModalContent.onCancel}
-				/>
-			) : messageModalContent && (
-				<NotificationModal
-					message={messageModalContent}
-					onClose={() => setMessageModalContent(null)}
+            {messageModalContent && typeof messageModalContent === 'object' && messageModalContent.title === "Confirm Kick" ? (
+                <ConfirmationModal
+                    title={messageModalContent.title}
+                    message={messageModalContent.message}
+                    onConfirm={messageModalContent.onConfirm}
+                    onCancel={messageModalContent.onCancel}
+                />
+            ) : messageModalContent && typeof messageModalContent === 'object' && messageModalContent.title === "Confirm Deletion" ? (
+                <ConfirmationModal
+                    title={messageModalContent.title}
+                    message={messageModalContent.message}
+                    onConfirm={messageModalContent.onConfirm}
+                    onCancel={messageModalContent.onCancel}
+                />
+            ) : messageModalContent && (
+                <NotificationModal
+                    message={messageModalContent}
+                    onClose={() => setMessageModalContent(null)}
+                />
+            )}
+			
+			{playersToAssign.length > 0 && userTeam && (
+				<AssignPlayerModal
+					player={playersToAssign[0]}
+					team={userTeam}
+					rosterSettings={REQUIRED_ROSTER_SPOTS}
+					onClose={() => handleConfirmAssignment(playersToAssign[0].id, 'BENCH')}
+					onAssign={handleConfirmAssignment}
 				/>
 			)}
-		</div>
-	);
+        </div>
+    );
 };
+
 const LeagueDetailsScreen = ({ league, userId, onBackToLeagues, onStartDraft, isGlobalFavorite, toggleGlobalFavorite }) => {
     const { db, isAuthReady } = useFirebase();
     const userTeam = league.teams.find(t => t.id === userId);
@@ -3261,34 +3050,7 @@ const LeagueDetailsScreen = ({ league, userId, onBackToLeagues, onStartDraft, is
         .filter(player => sortPosition === 'All' || player.position === sortPosition)
         .sort((a, b) => a.rank - b.rank);
         
-    const appId = 'default-app-id';
-	
-	// ADDED: New function for entering the draft room
-    const handleEnterDraftRoom = async () => {
-        if (!db || !isAuthReady || !league.id || !isLeagueAdmin) return;
-
-		const updatedReadyMembers = [...(league.readyMembers || [])];
-		if (!updatedReadyMembers.includes(userId)) {
-			updatedReadyMembers.push(userId);
-		}
-		
-		if (updatedReadyMembers.length !== league.members.length) {
-			setMessageModalContent("Cant enter the draft room until all members are ready!");
-			return;
-		}
-		
-        try {
-            const leagueDocRef = doc(db, `artifacts/${appId}/public/data/leagues`, league.id);
-            // This new 'lobby' status is the trigger for everyone to navigate
-            await updateDoc(leagueDocRef, { 
-			status: 'lobby',
-			readyMembers: updatedReadyMembers
-			});
-        } catch (e) {
-            console.error("Error entering draft room:", e);
-            setMessageModalContent("Error entering draft room. Please try again.");
-        }
-    };
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
     const handleSetReadyStatus = useCallback(async (ready) => {
         if (!db || !isAuthReady || !userId || !league.id) {
@@ -3353,7 +3115,7 @@ const LeagueDetailsScreen = ({ league, userId, onBackToLeagues, onStartDraft, is
                         throw new Error(`Invalid rank on row ${index + 2}. Rank must be a number.`);
                     }
 
-                    const name = data[0].trim
+                    const name = data[0].trim();
                     const position = data[1].trim().toUpperCase();
                     const team = data[2].trim().toUpperCase();
                     
@@ -3420,13 +3182,12 @@ const LeagueDetailsScreen = ({ league, userId, onBackToLeagues, onStartDraft, is
                             </ul>
                         )}
                         <div className="flex flex-wrap gap-4 items-center">
-                            {/* MODIFIED: This button now enters the lobby */}
                             <button
-                                onClick={handleEnterDraftRoom}
+                                onClick={() => onStartDraft(league)}
                                 className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 shadow-lg"
                                 disabled={league.status !== 'pending'}
                             >
-                                Enter Draft Room
+                                Start Draft
                             </button>
                             
                             {league.status === 'pending' && (
@@ -3667,7 +3428,7 @@ const App = () => {
     const { userId, currentUserEmail, isAuthReady, auth, db, isGlobalFavorite, toggleGlobalFavorite, MASTER_PLAYER_LIST } = useFirebase();
     const [currentView, setCurrentView] = useState('home');
     const [selectedLeague, setSelectedLeague] = useState(null);
-    const appId = 'default-app-id';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 // Fetch updated league data if selectedLeague changes or on initial load
     useEffect(() => {
@@ -3678,8 +3439,9 @@ const App = () => {
                     const updatedLeagueData = { id: docSnapshot.id, ...docSnapshot.data() };
                     setSelectedLeague(updatedLeagueData);
 
-                    // MODIFIED: Now navigates on 'lobby' status as well
-                    if ((updatedLeagueData.status === 'drafting' || updatedLeagueData.status === 'lobby') && currentView !== 'draft') {
+                    // NEW: Add this logic to automatically navigate to the draft screen
+                    // If the league status is 'drafting' and we aren't already on the draft screen, switch views.
+                    if (updatedLeagueData.status === 'drafting' && currentView !== 'draft') {
                         setCurrentView('draft');
                     }
 
@@ -3693,7 +3455,7 @@ const App = () => {
             });
             return () => unsubscribe();
         }
-    }, [selectedLeague?.id, db, isAuthReady, appId, currentView,selectedLeague]); // NEW: Add currentView to the dependency array
+    }, [selectedLeague?.id, db, isAuthReady, appId, currentView]); // NEW: Add currentView to the dependency array
 
     const handleNavigate = (view) => {
         setCurrentView(view);
