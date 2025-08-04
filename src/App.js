@@ -1740,61 +1740,63 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 	};
 	
 	const awardPlayerAndContinue = useCallback(async (player, winningTeamId, price, allBids) => {
-		const updatedPlayers = currentLeague.players.map(p =>
-			p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
-		);
+        const updatedPlayers = currentLeague.players.map(p =>
+            p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
+        );
 
-		const updatedTeams = currentLeague.teams.map(team => {
-			if (team.id === winningTeamId) {
-				return {
-					...team,
-					budget: team.budget - price,
-					roster: [...team.roster, { 
-						playerId: player.id, 
-						price, 
-						name: player.name, 
-						position: player.position,
-						assignedSpot: 'UNASSIGNED'
-					}]
-				};
-			}
-			return team;
-		});
+        const winningTeamIndex = currentLeague.teams.findIndex(t => t.id === winningTeamId);
+        
+        let updatedTeams = [...currentLeague.teams];
 
-		const winningTeam = updatedTeams.find(t => t.id === winningTeamId);
-		const newLastDraftedPlayerInfo = {
-			player: { id: player.id, name: player.name, position: player.position, team: player.team },
-			winningTeam: { id: winningTeam.id, name: winningTeam.name, profilePicture: winningTeam.profilePicture },
-			price,
-			bidHistory: allBids.map(bid => ({ ...bid, timestamp: bid.timestamp.getTime ? bid.timestamp.getTime() : bid.timestamp }))
-		};
+        if (winningTeamIndex !== -1) {
+            const winningTeam = updatedTeams[winningTeamIndex];
+            const newWinningTeam = {
+                ...winningTeam,
+                budget: winningTeam.budget - price,
+                roster: [...winningTeam.roster, {
+                    playerId: player.id,
+                    price,
+                    name: player.name,
+                    position: player.position,
+                    assignedSpot: 'UNASSIGNED'
+                }]
+            };
+            updatedTeams[winningTeamIndex] = newWinningTeam;
+        }
 
-		const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
-		const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
+        const winningTeam = updatedTeams.find(t => t.id === winningTeamId);
+        const newLastDraftedPlayerInfo = {
+            player: { id: player.id, name: player.name, position: player.position, team: player.team },
+            winningTeam: { id: winningTeam.id, name: winningTeam.name, profilePicture: winningTeam.profilePicture },
+            price,
+            bidHistory: allBids.map(bid => ({ ...bid, timestamp: bid.timestamp.getTime ? bid.timestamp.getTime() : bid.timestamp }))
+        };
 
-		await updateLeagueInFirestore({
-			players: updatedPlayers,
-			teams: updatedTeams,
-			currentPlayerIndex: null,
-			currentBid: 0,
-			currentBidderId: null,
-			bidEndTime: null,
-			intermissionEndTime,
-			status: 'intermission',
-			pausedAtRemainingTime: null,
-			activePlayerBids: {},
-			lastDraftedPlayerInfo: newLastDraftedPlayerInfo,
-			tiedBids: null,
-			rebidInfo: null,
-		});
-		setBidAmount(0);
+        const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
+        const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
-		// REVISED: Explicitly check if the user won and set the state to open the modal.
-		if (winningTeamId === userId) {
-			setPlayerToAssign(player);
-		}
-		
-	}, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount, userId]);
+        await updateLeagueInFirestore({
+            players: updatedPlayers,
+            teams: updatedTeams,
+            currentPlayerIndex: null,
+            currentBid: 0,
+            currentBidderId: null,
+            bidEndTime: null,
+            intermissionEndTime,
+            status: 'intermission',
+            pausedAtRemainingTime: null,
+            activePlayerBids: {},
+            lastDraftedPlayerInfo: newLastDraftedPlayerInfo,
+            tiedBids: null,
+            rebidInfo: null,
+        });
+        setBidAmount(0);
+
+        if (winningTeamId === userId) {
+            setPlayerToAssign(player);
+        }
+        
+    }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount, userId, playerToAssign]);
 
     const handleConfirmAssignment = async (playerId, assignedSpot) => {
         const team = currentLeague.teams.find(t => t.id === userId);
@@ -1810,8 +1812,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         
         await updateLeagueInFirestore({ teams: updatedTeams });
 
-        // REVISED: This line is now removed. The modal state is managed by the parent via the onClose prop.
-        // setPlayersToAssign(prev => prev.filter(p => p.id !== playerId));
     };
 
     const handleRebidEnd = useCallback(async () => {
@@ -2005,30 +2005,32 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     }, [currentLeague, updateLeagueInFirestore]);
 
 	useEffect(() => {
-			if (!db || !isAuthReady || !currentLeague.id) return;
+        if (!db || !isAuthReady || !currentLeague.id) return;
 
-			const leagueDocRef = doc(db, `artifacts/${appId}/public/data/leagues`, currentLeague.id);
-			const unsubscribe = onSnapshot(leagueDocRef, (docSnapshot) => {
-				if (docSnapshot.exists()) {
-					const updatedLeagueData = { id: docSnapshot.id, ...docSnapshot.data() };
-					setCurrentLeague(updatedLeagueData);
+        const leagueDocRef = doc(db, `artifacts/${appId}/public/data/leagues`, currentLeague.id);
+        const unsubscribe = onSnapshot(leagueDocRef, (docSnapshot) => {
+            if (docSnapshot.exists()) {
+                const updatedLeagueData = { id: docSnapshot.id, ...docSnapshot.data() };
+                setCurrentLeague(updatedLeagueData);
 
-					// REVISED: This logic now uses the dedicated state variables for the modal.
-					const newLastDrafted = updatedLeagueData.lastDraftedPlayerInfo;
-					if (newLastDrafted && newLastDrafted.winningTeam.id === userId && newLastDrafted.player.id !== lastProcessedPlayerId.current) {
-						lastProcessedPlayerId.current = newLastDrafted.player.id;
-						const userTeam = updatedLeagueData.teams.find(t => t.id === userId);
-						const rosteredPlayer = userTeam.roster.find(p => p.playerId === newLastDrafted.player.id);
-						if (rosteredPlayer && rosteredPlayer.assignedSpot === 'UNASSIGNED') {
-							setPlayerToAssign(newLastDrafted.player);
-						}
-					}
-				} else {
-					onBackToLeagueDetails();
-				}
-			});
-			return () => unsubscribe();
-		}, [db, isAuthReady, currentLeague.id, onBackToLeagueDetails, appId, userId]);
+                // NEW: Added a console log to help verify Firestore updates
+                console.log("onSnapshot received updated league data:", updatedLeagueData);
+
+                const newLastDrafted = updatedLeagueData.lastDraftedPlayerInfo;
+                if (newLastDrafted && newLastDrafted.winningTeam.id === userId && newLastDrafted.player.id !== lastProcessedPlayerId.current) {
+                    lastProcessedPlayerId.current = newLastDrafted.player.id;
+                    const userTeam = updatedLeagueData.teams.find(t => t.id === userId);
+                    const rosteredPlayer = userTeam.roster.find(p => p.playerId === newLastDrafted.player.id);
+                    if (rosteredPlayer && rosteredPlayer.assignedSpot === 'UNASSIGNED') {
+                        setPlayerToAssign(newLastDrafted.player);
+                    }
+                }
+            } else {
+                onBackToLeagueDetails();
+            }
+        });
+        return () => unsubscribe();
+    }, [db, isAuthReady, currentLeague.id, onBackToLeagueDetails, appId, userId]);
 		
     useEffect(() => {
         if (currentLeague.status === 'drafting' && !currentLeague.isPaused && currentLeague.bidEndTime) {
