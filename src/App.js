@@ -1736,24 +1736,9 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         });
         setBidAmount(0);
 
-    }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount]);
+    }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount,REQUIRED_ROSTER_SPOTS]);
 
-    const handleConfirmAssignment = async (playerId, assignedSpot) => {
-        const team = currentLeague.teams.find(t => t.id === userId);
-        if (!team) return;
-
-        const updatedRoster = team.roster.map(p => 
-            p.playerId === playerId ? { ...p, assignedSpot } : p
-        );
-
-        const updatedTeams = currentLeague.teams.map(t => 
-            t.id === userId ? { ...t, roster: updatedRoster } : t
-        );
-        
-        await updateLeagueInFirestore({ teams: updatedTeams });
-
-    };
-
+ 
     const handleRebidEnd = useCallback(async () => {
         if (currentLeague.status !== 'rebidding' || currentLeague.isPaused) return;
 
