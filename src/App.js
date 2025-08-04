@@ -1636,6 +1636,11 @@ const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) 
     };
 
     const availableSpots = getAvailableSpots();
+	
+	const handleAssignAndClose = (playerId, spot) => {
+        onAssign(playerId, spot);
+        onClose(); // Explicitly call the onClose function to close the modal
+    };
 
     return (
         <Modal title={`You Won ${player.name}!`} onClose={onClose}>
@@ -1647,7 +1652,7 @@ const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) 
                     {availableSpots.length > 0 ? availableSpots.map(spot => (
                         <button
                             key={spot}
-                            onClick={() => onAssign(player.id, spot)}
+                            onClick={() => handleAssignAndClose(player.id, spot)} // Use the new handler
                             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition-colors duration-200 shadow-md text-lg"
                         >
                             {spot}
@@ -1657,7 +1662,7 @@ const AssignPlayerModal = ({ player, team, rosterSettings, onAssign, onClose }) 
                     )}
                 </div>
                  <button
-                    onClick={() => onAssign(player.id, 'BENCH')}
+                    onClick={() => handleAssignAndClose(player.id, 'BENCH')} // Use the new handler
                     className="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md"
                 >
                     Assign to Bench
@@ -3027,7 +3032,8 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 						});
 						const filledSpots = { ...assignedCounts };
 						const remainingRosterSpots = TOTAL_REQUIRED_ROSTER_SLOTS - team.roster.length;
-						const budgetPerRemainingSpot = remainingRosterSpots > 0 ? (team.budget / remainingRosterSpots).toFixed(2) : 0;
+						//const budgetPerRemainingSpot = remainingRosterSpots > 0 ? (team.budget / remainingRosterSpots).toFixed(2) : 0;
+						const maxBidForThisPlayer = team.budget - Math.max(0, remainingRosterSpots - 1);
 						return (
 							<li key={team.id} className="bg-white p-3 rounded-md shadow-sm border border-gray-200">
 								<p className="font-medium text-gray-800 flex items-center">
@@ -3057,7 +3063,13 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 										<p className="text-sm text-gray-600 font-semibold">Total Spent: ${totalSpent}</p>
 										{remainingRosterSpots > 0 && (
 											<p className="text-sm text-gray-600">
-												Avg. Budget Left per Player: <span className="font-semibold">${budgetPerRemainingSpot}</span> <span className="text-gray-500">(for strategic planning)</span>
+												{/* * FIX for Bug 2: Changed display to be more useful for the user.
+												 * The original text was "Avg. Budget Left per Player" but the number
+												 * was often incorrect for bidding strategy. This new display shows
+												 * the maximum a player can bid while still reserving $1 for each
+												 * remaining spot.
+												 */}
+												Max Bid for Next Player: <span className="font-semibold">${maxBidForThisPlayer}</span> <span className="text-gray-500">(to fill all spots)</span>
 											</p>
 										)}
 										<div className="mt-2 text-xs text-gray-700">
