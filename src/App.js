@@ -1733,56 +1733,56 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 		setMessageModalContent("Team budget updated successfully!");
 	};
 	
-	const awardPlayerAndContinue = async (player, winningTeamId, price, allBids) => {
-        const updatedPlayers = currentLeague.players.map(p =>
-            p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
-        );
+	const awardPlayerAndContinue = useCallback(async (player, winningTeamId, price, allBids) => {
+		const updatedPlayers = currentLeague.players.map(p =>
+			p.id === player.id ? { ...p, status: 'taken', wonBy: winningTeamId, price, bidHistory: allBids } : p
+		);
 
-        const updatedTeams = currentLeague.teams.map(team => {
-            if (team.id === winningTeamId) {
-                return {
-                    ...team,
-                    budget: team.budget - price,
-                    roster: [...team.roster, { 
-                        playerId: player.id, 
-                        price, 
-                        name: player.name, 
-                        position: player.position,
-                        assignedSpot: 'UNASSIGNED' // Temporarily unassigned
-                    }]
-                };
-            }
-            return team;
-        });
+		const updatedTeams = currentLeague.teams.map(team => {
+			if (team.id === winningTeamId) {
+				return {
+					...team,
+					budget: team.budget - price,
+					roster: [...team.roster, { 
+						playerId: player.id, 
+						price, 
+						name: player.name, 
+						position: player.position,
+						assignedSpot: 'UNASSIGNED'
+					}]
+				};
+			}
+			return team;
+		});
 
-        const winningTeam = updatedTeams.find(t => t.id === winningTeamId);
-        const newLastDraftedPlayerInfo = {
-            player: { id: player.id, name: player.name, position: player.position, team: player.team },
-            winningTeam: { id: winningTeam.id, name: winningTeam.name, profilePicture: winningTeam.profilePicture },
-            price,
-            bidHistory: allBids.map(bid => ({ ...bid, timestamp: bid.timestamp.getTime ? bid.timestamp.getTime() : bid.timestamp }))
-        };
+		const winningTeam = updatedTeams.find(t => t.id === winningTeamId);
+		const newLastDraftedPlayerInfo = {
+			player: { id: player.id, name: player.name, position: player.position, team: player.team },
+			winningTeam: { id: winningTeam.id, name: winningTeam.name, profilePicture: winningTeam.profilePicture },
+			price,
+			bidHistory: allBids.map(bid => ({ ...bid, timestamp: bid.timestamp.getTime ? bid.timestamp.getTime() : bid.timestamp }))
+		};
 
-        const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
-        const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
+		const intermissionDuration = currentLeague.rosterSettings?.intermission || 30;
+		const intermissionEndTime = new Date(Date.now() + intermissionDuration * 1000);
 
-        await updateLeagueInFirestore({
-            players: updatedPlayers,
-            teams: updatedTeams,
-            currentPlayerIndex: null,
-            currentBid: 0,
-            currentBidderId: null,
-            bidEndTime: null,
-            intermissionEndTime,
-            status: 'intermission',
-            pausedAtRemainingTime: null,
-            activePlayerBids: {},
-            lastDraftedPlayerInfo: newLastDraftedPlayerInfo,
-            tiedBids: null,
-            rebidInfo: null,
-        });
-        setBidAmount(0);
-    };
+		await updateLeagueInFirestore({
+			players: updatedPlayers,
+			teams: updatedTeams,
+			currentPlayerIndex: null,
+			currentBid: 0,
+			currentBidderId: null,
+			bidEndTime: null,
+			intermissionEndTime,
+			status: 'intermission',
+			pausedAtRemainingTime: null,
+			activePlayerBids: {},
+			lastDraftedPlayerInfo: newLastDraftedPlayerInfo,
+			tiedBids: null,
+			rebidInfo: null,
+		});
+		setBidAmount(0);
+	}, [currentLeague.id, currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount]);
 
     const handleConfirmAssignment = async (playerId, assignedSpot) => {
         const team = currentLeague.teams.find(t => t.id === userId);
