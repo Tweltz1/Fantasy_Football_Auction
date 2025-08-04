@@ -1620,6 +1620,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
     const intermissionTimerRef = useRef(null);
     const rebidTimerRef = useRef(null);
     const leagueRef = useRef(currentLeague);
+
     useEffect(() => {
         leagueRef.current = currentLeague;
     }, [currentLeague])
@@ -1627,11 +1628,17 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
 
     const isLeagueAdmin = currentLeague.adminId === userId;
 
-    const REQUIRED_ROSTER_SPOTS = currentLeague.rosterSettings || {
-        QB: 1, RB: 2, WR: 3, TE: 1, DEF: 1, K: 1, FLEX: 1, SUPERFLEX: 1, BENCH: 6
-    };
-
-    const TOTAL_REQUIRED_ROSTER_SLOTS = Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
+    // FIX: Use useMemo to memoize the roster settings object.
+    const REQUIRED_ROSTER_SPOTS = React.useMemo(() => {
+        return currentLeague.rosterSettings || {
+            QB: 1, RB: 2, WR: 3, TE: 1, DEF: 1, K: 1, FLEX: 1, SUPERFLEX: 1, BENCH: 6
+        };
+    }, [currentLeague.rosterSettings]);
+    
+    // FIX: Use useMemo for the total roster slots as well.
+    const TOTAL_REQUIRED_ROSTER_SLOTS = React.useMemo(() => {
+        return Object.values(REQUIRED_ROSTER_SPOTS).reduce((sum, count) => sum + count, 0);
+    }, [REQUIRED_ROSTER_SPOTS]);
 
     useEffect(() => {
         localStorage.setItem('quickBid1', quickBid1.toString());
@@ -1657,7 +1664,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         setMessageModalContent("Team budget updated successfully!");
     };
     
-    // REFACTORED: awardPlayerAndContinue to include smart assigning logic
     const awardPlayerAndContinue = useCallback(async (player, winningTeamId, price, allBids) => {
         // Find the winning team and their current roster
         const winningTeam = currentLeague.teams.find(t => t.id === winningTeamId);
@@ -1736,7 +1742,7 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
         });
         setBidAmount(0);
 
-    }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount,REQUIRED_ROSTER_SPOTS]); 
+    }, [currentLeague.players, currentLeague.teams, currentLeague.rosterSettings, updateLeagueInFirestore, setBidAmount, REQUIRED_ROSTER_SPOTS]);
 
  
     const handleRebidEnd = useCallback(async () => {
@@ -1945,11 +1951,6 @@ const DraftScreen = ({ league, onBackToLeagueDetails }) => {
                 if (newLastDrafted && newLastDrafted.winningTeam.id === userId && newLastDrafted.player.id !== lastProcessedPlayerId.current) {
                     lastProcessedPlayerId.current = newLastDrafted.player.id;
                     // REMOVED: The manual assignment modal is no longer used.
-                    // const userTeam = updatedLeagueData.teams.find(t => t.id === userId);
-                    // const rosteredPlayer = userTeam.roster.find(p => p.playerId === newLastDrafted.player.id);
-                    // if (rosteredPlayer && rosteredPlayer.assignedSpot === 'UNASSIGNED') {
-                    //     setPlayerToAssign(newLastDrafted.player);
-                    // }
                 }
             } else {
                 onBackToLeagueDetails();
